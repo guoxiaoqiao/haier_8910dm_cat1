@@ -38,6 +38,8 @@ static void zk_ThreadEntry(void *param)
     for (int n = 0; n < 50; n++)
     {
         OSI_LOGI(0, "[zkd] hello world %d result=%d", n, DataAccumulateSumCRC2(buff, len));
+
+		DataAccumulateSumCRC1(buff, len);
 		
         osiThreadSleep(2000);
     }

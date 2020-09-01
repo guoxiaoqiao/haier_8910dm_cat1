@@ -1,5 +1,6 @@
 #include "apptest1.h"
 #include "apptest2.h"
+#include "lib_test4.h"
 
 //累加和校验算法
 unsigned char DataAccumulateSumCRC1(void *DataBuff, unsigned int DataLen)
@@ -21,7 +22,7 @@ unsigned char DataAccumulateSumCRC1(void *DataBuff, unsigned int DataLen)
 	unsigned char *Ptr = (unsigned char*)DataBuff;*/
 	
 	//return DataAccumulateSumCRC(DataBuff, DataLen);
-	OSI_LOGI(0, "[zkd] hello world end");
+	OSI_LOGI(0, "[zkd] hello world end result=%d", Lib_test4(DataBuff, DataLen));
 	return 0;
 }
 
