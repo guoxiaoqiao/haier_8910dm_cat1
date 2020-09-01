@@ -61,6 +61,8 @@
 #include "srv_keypad.h"
 #include "srv_usb.h"
 
+#include "haier_config.h"
+
 #ifdef CONFIG_HEADSET_DETECT_SUPPORT
 #include "drv_headset.h"
 #endif
@@ -411,6 +413,11 @@ void osiAppStart(void)
 
     srvUsbInit();
     srvPmRun();
+
+    #ifdef  CONFIG_HAIER_APP
+        extern int zk_appimg_enter();
+        zk_appimg_enter();
+    #endif
 
     // wait a while for PM source created
     osiThreadSleep(10);

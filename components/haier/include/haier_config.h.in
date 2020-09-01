@@ -10,16 +10,15 @@
  * without further testing or modification.
  */
 
-#ifndef _APP_TEST_H_
-#define _APP_TEST_H_
-
+#ifndef _HAIER_CONFIG_H_
+#define _HAIER_CONFIG_H_
 
 // @AUTO_GENERATION_NOTICE@
 
 /**
- * zkai app test
+ * haier app config
  */
-#cmakedefine CONFIG_APP_TEST
+#cmakedefine CONFIG_HAIER_APP
 
 
 #endif

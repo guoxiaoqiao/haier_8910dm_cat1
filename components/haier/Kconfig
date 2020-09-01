@@ -9,12 +9,12 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-menu "Application test"
+menu "Haier Application config"
 
-config APP_TEST
-    bool "zkai app test"
+config HAIER_APP
+    bool "haier app config"
     default y
     help
-      zkai app test.
+      haier app config.
 
 endmenu

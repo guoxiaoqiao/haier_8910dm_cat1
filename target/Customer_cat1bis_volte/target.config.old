@@ -250,6 +250,11 @@ CONFIG_APPIMG_LOAD_FILE_NAME="/appload.img"
 CONFIG_ATR_UART_BLUE_SCREEN_DEBUG=y
 
 #
+# Application test
+#
+CONFIG_APP_TEST=y
+
+#
 # net
 #
 CONFIG_NET_LWIP_DEBUG=y

@@ -9,14 +9,8 @@
 # warranty that such application will be suitable for the specified use
 # without further testing or modification.
 
-set(import_lib ${out_lib_dir}/libapptest_core.a)
-configure_file(core/${CONFIG_SOC}/libapptest_core.a ${import_lib} COPYONLY)
+set(import_lib ${out_lib_dir}/libuplugsdk_sea.a)
+configure_file(core/${CONFIG_SOC}/libuplugsdk_sea.a ${import_lib} COPYONLY)
 add_app_libraries(${import_lib})
-add_library(apptest_core STATIC IMPORTED GLOBAL)
-set_target_properties(apptest_core PROPERTIES IMPORTED_LOCATION ${import_lib})
-
-set(import_lib ${out_lib_dir}/libtest_core.a)
-configure_file(core/${CONFIG_SOC}/libtest_core.a ${import_lib} COPYONLY)
-add_app_libraries(${import_lib})
-add_library(test_core STATIC IMPORTED GLOBAL)
-set_target_properties(test_core PROPERTIES IMPORTED_LOCATION ${import_lib})
+add_library(uplugsdk_sea STATIC IMPORTED GLOBAL)
+set_target_properties(uplugsdk_sea PROPERTIES IMPORTED_LOCATION ${import_lib})

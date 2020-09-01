@@ -10,7 +10,6 @@
 # without further testing or modification.
 
 add_subdirectory_if_exist(appstart)
-add_subdirectory_if_exist(apptest)
 add_subdirectory_if_exist(apploader)
 add_subdirectory_if_exist(atr)
 add_subdirectory_if_exist(ats)
@@ -25,6 +24,7 @@ add_subdirectory_if_exist(driver)
 add_subdirectory_if_exist(firmwareupdate)
 add_subdirectory_if_exist(fs)
 add_subdirectory_if_exist(hal)
+add_subdirectory_if_exist(haier)
 add_subdirectory_if_exist(kernel)
 add_subdirectory_if_exist(libjpeg-turbo)
 add_subdirectory_if_exist(libs)
