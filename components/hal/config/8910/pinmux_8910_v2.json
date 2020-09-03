@@ -18,8 +18,8 @@
         "keyout_1",
         "keyout_2",
         "keyout_3",
-        "keyout_4",
-        "keyout_5"
+        "uart_3_rxd",
+        "uart_3_txd"
     ],
     "fun_prop": {
         "sim_1_clk": {

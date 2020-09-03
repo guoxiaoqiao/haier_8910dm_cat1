@@ -19,7 +19,13 @@ set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_di
 #target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_ZKDB)
 target_include_directories(${target} PUBLIC include)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(${target} PRIVATE kernel driver calclib ats cfw net nanopb fs service diag)
+target_include_directories(${target} PRIVATE ../kernel/freertos/include)
+target_include_directories(${target} PRIVATE ../kernel/chip/8910)
+#target_include_directories(${target} PRIVATE ../kernel/src)
+#target_include_directories(${target} PRIVATE ../hal/include)
+#target_include_directories(${target} PRIVATE ../hal/include/Core_A)
+
+target_link_libraries(${target} PRIVATE kernel driver net fs)
 
 aux_source_directory(./src DIR_SRCS)
 message("haier app ${DIR_SRCS}")

@@ -61,7 +61,7 @@
 #include "srv_keypad.h"
 #include "srv_usb.h"
 
-#include "haier_config.h"
+#include "haier_config.h"  //zhangkai 2020/9/3
 
 #ifdef CONFIG_HEADSET_DETECT_SUPPORT
 #include "drv_headset.h"
