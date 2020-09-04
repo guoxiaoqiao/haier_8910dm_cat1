@@ -415,8 +415,8 @@ void osiAppStart(void)
     srvPmRun();
 
     #ifdef  CONFIG_HAIER_APP
-        extern int zk_appimg_enter();
-        zk_appimg_enter();
+        extern int haier_appimg_enter(void);
+        haier_appimg_enter();
     #endif
 
     // wait a while for PM source created

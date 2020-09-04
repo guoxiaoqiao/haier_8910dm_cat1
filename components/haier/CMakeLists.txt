@@ -24,6 +24,7 @@ target_include_directories(${target} PRIVATE ../kernel/chip/8910)
 #target_include_directories(${target} PRIVATE ../kernel/src)
 #target_include_directories(${target} PRIVATE ../hal/include)
 #target_include_directories(${target} PRIVATE ../hal/include/Core_A)
+target_include_targets(${target} PRIVATE atr)
 
 target_link_libraries(${target} PRIVATE kernel driver net fs)
 

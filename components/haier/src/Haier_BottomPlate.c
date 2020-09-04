@@ -1,110 +1,7 @@
 #include "Haier_BottomPlate.h"
 
-typedef enum
-{
-	NULL_CTR = 0,
-    BT_CONTROL_AIR,
-	SERVER_CONTROL_AIR,
-		
-}REMOTE_CTR_TYPE;
-
-//往这个枚举添加值时，请特别注意要往末尾添加，不要在中间添加，否则会影响某个地方的计算
-typedef enum
-{
-    BT_UART_RECV_MSG = 1,
-	BT_EVENT_NOTIFY_MSG = 2,	
-	
-	AIR_UART_RECV_MSG = 3,
-	GET_AIR_DATA_MSG = 4,
-	
-	BT_CTR_AIR_MSG = 5,
-	SERVER_CTR_AIR_MSG = 6,
-
-	UPLUS_SDK_INIT_MSG = 7,
-	UPLUS_SDK_SEND_MSG = 8,
-	UPLUS_SDK_RECV_MSG = 9,
-
-	FOTA_START_MSG = 10,
-	FOTA_UPDATE_MSG = 11,
-
-	NETWORK_DISCONNECT = 12,
-	NETWORK_READY = 13,
-	NETWORK_LINKED = 14,
-		
-}TASK_MSG_ID;
-
-typedef enum
-{
-    SYS_STATE_POWN = 1,
-	SYS_STATE_NETWORK_CONNECT,
-    SYS_STATE_RUN,
-    SYS_STATE_FOTA,
-		
-}SYS_STATE;
-
-typedef struct
-{
-    TASK_MSG_ID id;
-    uint32_t len;
-    void *param;
-}TASK_MSG;
-
-//此结构体为系统用到的一些全局变量，为了统一管理放到一个结构体内，后续有其他变量建议都放到这里
-typedef struct Haier_AppSystem1{
-
-	SYS_STATE sysCurrState;   //系统当前状态
-
-	uint8_t netCurrState;		//网络当前状态   
-	
-	//上电初始化就读出来的模组基本信息IMEI, IMSI, ICCID
-	char Module_IMEI  [IMEI_LEN+1];
-	char Module_IMSI  [IMSI_LEN+1];
-	char Module_ICCID [ICCID_LEN+1];
-	//保存蓝牙MAC地址，12字节+字符串结束符
-	char BT_MAC_BUF[15]; 
-	//核心网分配给模组的IP
-	char Module_ipaddr	[20];
-
-	uint16_t get_air_data_cnt;
-
-	uint8_t GetDeviceVer_OK_Flag; 	//获取海尔设备软件版本成功标志位
-	uint8_t GetDeviceVer_Fail_Flag;	//获取海尔设备软件版本失败标志位
-
-	REMOTE_CTR_TYPE remote_ctr_air_flag; //远程控制空调标志位
-
-	uint8_t Inquire_BigData_FailCnt; //连续12次查询大数据没有返回，则模组整机复位
-
-	uint8_t reconnect_flag;
-	
-	char uplus_hostname[50];
-
-}Haier_AppSystem;
-
-typedef struct {
-	
-	//用户区标识符	
-	uint8_t Identifier[5];	
-	//fota标志位
-	uint8_t fota_flag;
-	//模组复位次数
-	uint32_t rest_num;
-	
-}LOCAL_CFG;
-
-//task handle
-TaskHandle_t air_recv_task_handle;
-TaskHandle_t air_task_handle;
-//queue handle
-QueueHandle_t uart_recv_queue;
-QueueHandle_t haier_app_queue;
-//timer handle
-TimerHandle_t Haier_Timers;
-
 static drvUart_t *air_drv;
 static air_uart_recv1 air_uart_recv;
-
-Haier_AppSystem appSysTem;
-LOCAL_CFG local;
 
 //空调底板的一些基础信息
 struct DevicVersion1 DevicVersion;
@@ -123,79 +20,6 @@ void air_uart_write(uint8_t *buff, int32_t len)
 		return;
 	
     drvUartSend(air_drv, (void *)buff, (size_t)len);
-}
-
-void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout)
-{
-    TASK_MSG *msg = NULL;
-
-    msg = (TASK_MSG *)malloc(sizeof(TASK_MSG));
-	if(msg == NULL)
-	{
-		OSI_LOGE(0, "[zk] task_msg_send_0 malloc fail %d", sizeof(TASK_MSG));
-		return;
-	}
-	memset(msg, 0, sizeof(TASK_MSG));
-    msg->id = id;
-	if((param != NULL) && (len > 0))
-	{
-		msg->param = malloc(len+1);
-		if(msg->param == NULL)
-		{
-			OSI_LOGE(0, "[zk] task_msg_send_1 malloc fail %d", len);
-			free(msg);
-			return ;
-		}
-		memset(msg->param, 0, len+1);
-		memcpy(msg->param, param, len);
-    	msg->len = len;
-	}
-
-	if(osiMessageQueueTryPut((osiMessageQueue_t *)qhandle, &msg, 0) == false)
-	{
-		OSI_LOGE(0, "[zk] zk_queue_msg_send_2 Queue Send fail");
-	}
-	/*if (IS_IRQ())
-    {
-        if (timeout != 0)
-            return;
-
-		OSI_LOGE(0, "[zk] zk_queue_msg_send_3 ISR");
-        BaseType_t yield = pdFALSE;
-        if (xQueueSendToBackFromISR(qhandle, (void *)msg, &yield) != pdPASS)
-		{
-			OSI_LOGE(0, "[zk] task_msg_send_2 Queue Send ISR fail");
- 			return;	
-		}
-        portYIELD_FROM_ISR(yield);
-		OSI_LOGE(0, "[zk] zk_queue_msg_send_4 Queue Send ISR OK");
-        return;
-    }
-	if(xQueueSend(qhandle, (void *)msg, osiMsToOSTick(timeout)) != pdPASS )
-	{
-		OSI_LOGE(0, "[zk] task_msg_send_3 Queue Send fail");
-	}
-	OSI_LOGE(0, "[zk] zk_queue_msg_send_5 Queue Send OK");*/
-}
-
-void zk_debug(uint8_t *buff, uint16_t len)
-{
-	OSI_LOGI(0, "*****************************start******************************");
-
-	uint16_t i,j,m;
-	j = len % 10;
-	uint8_t *p = buff;
-
-	for(i=0; i < (len - j); i+=10)
-	{
-		OSI_LOGI(0, "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",p[i],p[i+1],p[i+2],p[i+3],p[i+4],p[i+5],p[i+6],p[i+7],p[i+8],p[i+9]);
-	
-	}
-	for(m=0; m<j; m++)
-	{
-		OSI_LOGI(0, "%02X", p[len - j + m]);
-	}
-	OSI_LOGI(0, "*****************************end******************************");
 }
 
 static void air_recv_Callback(void *param, uint32_t evt)
@@ -225,7 +49,7 @@ static void air_recv_Callback(void *param, uint32_t evt)
 		OSI_LOGI(0, "[air] RX FIFO overflowed");
 		break;
    case DRV_UART_EVENT_TX_COMPLETE:
-		OSI_LOGI(0, "[air] All data had been sent");
+		//OSI_LOGI(0, "[air] All data had been sent");
 		break;
    default:
 		OSI_LOGI(0, "[air] not event event=%d", evt);
@@ -238,7 +62,7 @@ static void Haier_GetBigDataHandle(void)
 	zk_queue_msg_send(haier_app_queue, GET_AIR_DATA_MSG, NULL, 0, 0);
 }
 
-static void Haier_SoftTimerCallback(void *argument)
+void Haier_SoftTimerCallback(void *argument)
 {
 	Haier_GetBigDataHandle();
 }
@@ -564,11 +388,11 @@ static void air_BigData_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Dat
 	if((RecvBuff == NULL) || (RecvLen == 0)||(Databuff == NULL) || (Datalen == 0))
 		return;
 
-	//if(get_sye_state() == SYS_STATE_RUN)
+	if(get_sye_state() == SYS_STATE_RUN)
 	{
 		struct ModuleData1 ModuleData = {0};
 		
-		zk_debug(Databuff,Datalen);
+		//(Databuff,Datalen);
 		//获取ICCID
 		memcpy(ModuleData.Module_ICCID, appSysTem.Module_ICCID, ICCID_LEN);
 		//获取IMSI
@@ -625,10 +449,10 @@ static void air_BigData_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Dat
 		
 		OSI_LOGI(0, "[zk air] air_BigData_handle_0");
 	}
-	/*else
+	else
 	{
 		OSI_LOGI(0, "[zk air] air_BigData_handle_1:uplus sdk not initiated");
-	}*/
+	}
 }
 
 static void HaierBottomAlarmNotify(uint8_t *StateData, uint16_t Datalen)
@@ -645,7 +469,7 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 	if((Databuff == NULL) || (Datalen == 0))
 		return;
 	
-	//if(get_sye_state() == SYS_STATE_RUN)
+	if(get_sye_state() == SYS_STATE_RUN)
 	{
 		//拷贝接收到的数据到大数据结构体
 		memcpy(&Curr_StateData, Databuff+12, sizeof(struct StateData1));
@@ -680,7 +504,7 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 			if(appSysTem.remote_ctr_air_flag == SERVER_CONTROL_AIR)
 			{
 				OSI_LOGI(0, "[zk air] server ctr air ack");
-				zk_debug(Databuff,Datalen);
+				//zk_debug(Databuff,Datalen);
 				//服务器下发查询指令，不管是否有变化，都上报
 				//Haier_EventNotifyServer(PKT_BUF_DIR_RSP, EPP_DATA, RecvBuff, datalen);
 				//更新一次大数据全量 为下次做比较
@@ -692,7 +516,7 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 				if(memcmp(&Old_StateData, &Curr_StateData, sizeof(struct StateData1)))
 				{
 					OSI_LOGI(0, "[zk air] Curr_StateData != Old_StateData");
-					zk_debug(Databuff,Datalen);
+					//zk_debug(Databuff,Datalen);
 					//底板状态发生变化需要上报到海尔服务器
 					//Haier_EventNotifyServer(PKT_BUF_DIR_RPT, EPP_DATA, RecvBuff, datalen);
 					//更新一次大数据全量 为下次做比较
@@ -712,10 +536,10 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 			memcpy(&Old_StateData, &Curr_StateData, sizeof(struct StateData1));
 		}
 	}
-	/*else
+	else
 	{
 		OSI_LOGI(0, "[zk air] air_StateData_Handle:uplus sdk not initiated...");
-	}*/
+	}
 }
 
 //空调底板状态返回数据处理函数
@@ -908,10 +732,10 @@ static void Haier_UartRecevied(uint8_t *RecvBuff, uint16_t RecvLen)
 	Haier_BottomProtocolResolution(RecvBuff, RecvLen, ValidDataBuff, ValidDtaLen);
 }
 
-static void air_recv_task_main(void *param)
+void air_recv_task_main(void *param)
 {
 	TASK_MSG *msg = NULL;
-	OSI_LOGI(0, "[zk] air_recv_task_main init finish");
+	OSI_LOGI(0, "[zk test] DevicVer=%d StateData1=%d BigData1=%d NET_STATS1=%d ModuleData1=%d", sizeof(struct DevicVersion1), sizeof(struct StateData1),sizeof(struct BigData1),sizeof(struct NET_STATS1),sizeof(struct ModuleData1));
 	while(1)
 	{
 		if(xQueueReceive(uart_recv_queue, &msg, portMAX_DELAY) == pdPASS)
@@ -929,7 +753,7 @@ static void air_recv_task_main(void *param)
 					}
 					OSI_LOGI(0, "air send:%d", drvUartSend(air_drv, (void *)sendbuf, (size_t)msg->len+5));
 					free(sendbuf);*/
-					zk_debug(msg->param, msg->len);
+					//zk_debug(msg->param, msg->len);
 					Haier_UartRecevied(msg->param, msg->len);
 					break;
 				default:
@@ -950,38 +774,3 @@ static void air_recv_task_main(void *param)
 	}
 }
 
-int zk_appimg_enter()
-{
-	//用于接收空调串口数据通知
-	uart_recv_queue = xQueueCreate(3, sizeof(TASK_MSG *));
-	//uart_recv_queue = osiMessageQueueCreate(5, sizeof(TASK_MSG *));
-	if(uart_recv_queue == NULL)
-	{
-		OSI_LOGE(0, "[zk] uart_recv_queue Created Fail");
-	}
-
-	haier_app_queue = xQueueCreate(5, sizeof(TASK_MSG *));
-	if(haier_app_queue == NULL)
-	{
-		OSI_LOGE(0, "haier_app_queue Created Fail");
-	}
-
-	//用于定时获取空调底板状态
-	Haier_Timers = xTimerCreate("Haier_Timer", pdMS_TO_TICKS(5000), pdFALSE, NULL, Haier_SoftTimerCallback);
-	if(Haier_Timers == NULL)
-	{
-		OSI_LOGE(0, "[zk] Haier_Timers Created Fail");
-	}
-
-	//海尔空调控制主任务 ：定时获取空调底板状态、获取环境曲线数据，并发送给海尔服务器
-	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 512, NULL, OSI_PRIORITY_NORMAL+1, &air_task_handle) != pdPASS)
-	{
-		OSI_LOGE(0, "[zk] air_task_main Created Fail");
-	}
-
-    if(xTaskCreate((TaskFunction_t)air_recv_task_main, "air_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL, &air_recv_task_handle) != pdPASS)
-    {
-        OSI_LOGE(0, "[zk] air_recv_task Created Fail");
-    }
-    return 0;
-}

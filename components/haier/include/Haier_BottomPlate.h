@@ -1,29 +1,9 @@
 #ifndef _HAIER_BOTTOMPLATE_H_
 #define _HAIER_BOTTOMPLATE_H_
 
-#define OSI_LOG_TAG OSI_MAKE_LOG_TAG('Z', 'K', 'D', 'B')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_VERBOSE
+#include "haier_appmain.h"
 
-#include "osi_log.h"
-#include "osi_api.h"
-
-#include "drv_uart.h"
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "timers.h"
-#include "queue.h"
-//#include "semphr.h"
-
-#include "stdlib.h"
-#include "string.h"
-#include "stdio.h"
-
-#define IMEI_LEN			15
-#define IMSI_LEN			15
-#define ICCID_LEN			20
-
-#define AIR_UART_NAME	DRV_NAME_UART1
+#define AIR_UART_NAME	DRV_NAME_UART3
 #define AIR_BAUD		(9600)
 
 #define AIR_UART_RECVBUFF_MAX		200
@@ -61,7 +41,7 @@ struct DevicVersion1{
 			char		DeviceName[8];			 //设备名称
 			uint16_t 	DeviceFeaturesInfo;		 //设备功能信息
 
-};
+}__attribute__((packed));
 
 struct StateData1{
 
@@ -89,7 +69,7 @@ struct StateData1{
 			uint16_t		CO2;					 //二氧化碳实际值			byte29,30
 			uint32_t 		Batery;					 //累计电量				byte31,34
 
-};
+}__attribute__((packed));
 
 
 //大数据全量结构体
@@ -117,7 +97,7 @@ struct BigData1{
 			uint16_t		Formaldehyde;			 //甲醛实际值				byte25,26
 			uint16_t		AirQuality;				 //空气质量实际值			byte27,28
 			uint16_t		CO2;					 //二氧化碳实际值			byte29,30
-			uint16_t 		Batery;					 //累计电量				byte31,34
+			uint32_t 		Batery;					 //累计电量				byte31,34
 			uint16_t		Power;					 //功率					byte35,36
 			uint8_t		    RoomCoilTemperature;	 //室内盘管温度			byte37
 			uint8_t		    OutdoorExhaleTemperature;//室外吐气温度			byte38
@@ -129,7 +109,7 @@ struct BigData1{
 			uint16_t		WordD;					 //字D 同样不知道什么意思	byte45,46
 			uint16_t        ElectronicSwellSwitch;	 //电子膨胀开关			byte47,48
 
-};
+}__attribute__((packed));
 
 struct NET_STATS1{
 	
@@ -139,7 +119,7 @@ struct NET_STATS1{
 	char	    Cell_ID[10];	//10
 	uint8_t 	Coverage_level;
 	
-};
+}__attribute__((packed));
 
 struct ModuleData1{
 
@@ -148,8 +128,6 @@ struct ModuleData1{
 	
 	struct NET_STATS1  net_state_info;
 	
-};
-
-unsigned char DataAccumulateSumCRC1(void *DataBuff, unsigned int DataLen);
+}__attribute__((packed));
 
 #endif
