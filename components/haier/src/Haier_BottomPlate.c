@@ -174,11 +174,9 @@ static void Get_AirData_Handle(void)
 
 	appSysTem.Inquire_BigData_FailCnt++;
 	if(appSysTem.Inquire_BigData_FailCnt > CHECK_BIGDATA_MAX)
-	{
-		OSI_LOGI(0, "[zk air] Inquire_BigData_FailCnt rest");
-		
+	{	
 		appSysTem.Inquire_BigData_FailCnt = 0; 
-		//iot_os_restart();	//重启模组
+		restart(2);	//重启模组
 	}
 	
 	if(appSysTem.get_air_data_cnt < GET_BIG_DATA_NUM)

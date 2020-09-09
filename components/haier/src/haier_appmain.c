@@ -1,5 +1,6 @@
 #include "haier_appmain.h"
 
+void restart(uint8_t typ);
 void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
 void zk_debug(uint8_t *buff, uint16_t len);
 
@@ -28,6 +29,21 @@ TimerHandle_t network_Timers;
 
 Haier_AppSystem appSysTem;
 LOCAL_CFG local;
+
+void restart(uint8_t typ)
+{
+	switch (typ)
+	{
+		case 1:
+			OSI_LOGI(0, "[zk net] restart_0: network timeout rest");
+			break;
+		case 2:
+			OSI_LOGI(0, "[zk net] restart_1: Inquire_BigData_FailCnt rest");
+		default:
+			return;
+	}
+	//vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
+}
 
 void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout)
 {

@@ -352,8 +352,7 @@ static void vat_cmd_send(char *cmdbuf, uint32_t len)
 
 void net_timer_callback(void *argument)
 {	
-	OSI_LOGI(0, "[zk net] net_timer_callback:RESET");
-	//iot_os_restart();
+	restart(1);
 }
 
 static void module_init(void)
@@ -420,13 +419,19 @@ void network_task_main(void *pParameter)
                     break;
                 case NETWORK_LINKED:
                     OSI_LOGI(0, "[zk net] network_task_main_5: net work linked");
+                    ////搜网成功以后，关闭这个定时器，否则会整机复位
+	                if(xTimerIsTimerActive(network_Timers) == pdPASS)
+                    {
+                        xTimerStop(network_Timers, 0);
+                        OSI_LOGI(0, "[zk net] network_task_main_6: stop network time");
+                    }
                     set_sys_state(SYS_STATE_REG);
                     //成功激活PDP承载通道后，获取IMSI,ICCID，为后续连接u+云做准备
                     vat_cmd_send("AT+CCID\r\n", strlen("AT+CCID\r\n"));
                     vat_cmd_send("AT+CIMI\r\n", strlen("AT+CIMI\r\n"));
                     break;
                 default:
-                    OSI_LOGE(0, "[zk net] network_task_main_6: not cmd %d", msg->id);
+                    OSI_LOGE(0, "[zk net] network_task_main_7: not cmd %d", msg->id);
                     break;
             }
         }

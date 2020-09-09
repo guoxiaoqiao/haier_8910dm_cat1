@@ -31,7 +31,7 @@
 #define IMSI_LEN			15
 #define ICCID_LEN			20
 
-#define SEARCH_NET_MAX_TIME	(2*60*1000)
+#define SEARCH_NET_MAX_TIME	(5*60*1000)
 
 typedef enum
 {
@@ -155,6 +155,7 @@ extern TimerHandle_t network_Timers;
 
 extern uint32_t osiMsToOSTick(uint32_t ms);
 
+extern void restart(uint8_t typ);
 extern void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
 extern void zk_debug(uint8_t *buff, uint16_t len);
 
