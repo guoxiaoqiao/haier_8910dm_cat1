@@ -12,8 +12,6 @@ static struct StateData1 Curr_StateData;
 //模组网络侧状态(每次查询大数据时，会查询一次网络状态数据，收到底板大数据应答时，会携带网络状态数据一起上报给服务器)
 struct NET_STATS1 net_info;
 
-extern uint32_t osiMsToOSTick(uint32_t ms);
-
 void air_uart_write(uint8_t *buff, int32_t len)
 {
 	if((buff == NULL) || (len <=0))
@@ -134,7 +132,7 @@ static uint8_t GetDeviceBigData[13]={0xFF, 0xFF, 0x0A, 00, 00, 00, 00, 00, 00, 0
 //获取空调底板大数据
 static void Get_BigData(void)
 {
-	OSI_LOGI(0, "[zk air] time get big data");
+	OSI_LOGI(0, "[zk air] get big data");
 	air_uart_write(GetDeviceBigData, sizeof(GetDeviceBigData));
 }
 
@@ -143,7 +141,7 @@ static uint8_t GetDeviceStateData[13]={0xFF, 0xFF, 0x0A, 00, 00, 00, 00, 00, 00,
 //获取空调底板状态数据
 static void Get_StateData(void)
 {
-	OSI_LOGI(0, "[zk air] time get state data get_air_data_cnt=%d rest_num=%d", appSysTem.get_air_data_cnt, local.rest_num);
+	OSI_LOGI(0, "[zk air] get state data get_air_data_cnt=%d rest_num=%d", appSysTem.get_air_data_cnt, local.rest_num);
 	air_uart_write(GetDeviceStateData, sizeof(GetDeviceStateData));
 }
 
@@ -735,7 +733,6 @@ static void Haier_UartRecevied(uint8_t *RecvBuff, uint16_t RecvLen)
 void air_recv_task_main(void *param)
 {
 	TASK_MSG *msg = NULL;
-	OSI_LOGI(0, "[zk test] DevicVer=%d StateData1=%d BigData1=%d NET_STATS1=%d ModuleData1=%d", sizeof(struct DevicVersion1), sizeof(struct StateData1),sizeof(struct BigData1),sizeof(struct NET_STATS1),sizeof(struct ModuleData1));
 	while(1)
 	{
 		if(xQueueReceive(uart_recv_queue, &msg, portMAX_DELAY) == pdPASS)

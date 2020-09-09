@@ -10,6 +10,8 @@
 #include "at_engine.h"
 
 #include "drv_uart.h"
+#include "drv_gpio.h"
+#include "vfs.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -28,6 +30,8 @@
 #define IMEI_LEN			15
 #define IMSI_LEN			15
 #define ICCID_LEN			20
+
+#define SEARCH_NET_MAX_TIME	(2*60*1000)
 
 typedef enum
 {
@@ -56,9 +60,15 @@ typedef enum
 	FOTA_START_MSG = 10,
 	FOTA_UPDATE_MSG = 11,
 
-	NETWORK_DISCONNECT = 12,
-	NETWORK_READY = 13,
-	NETWORK_LINKED = 14,
+	NETWORK_ATTACHING = 12,
+	NETWORK_ATTACHED = 13,
+	NETWORK_DISCONNECT = 14,
+	NETWORK_READY = 15,
+	NETWORK_LINKING = 16,
+	NETWORK_LINKED = 17,
+
+	VAT_SEND_MSG = 18,
+	VAT_RECV_MSG = 19,
 		
 }TASK_MSG_ID;
 
@@ -66,6 +76,7 @@ typedef enum
 {
     SYS_STATE_POWN = 1,
 	SYS_STATE_NETWORK_CONNECT,
+	SYS_STATE_REG,
     SYS_STATE_RUN,
     SYS_STATE_FOTA,
 		
@@ -101,9 +112,11 @@ typedef struct Haier_AppSystem1{
 
 	REMOTE_CTR_TYPE remote_ctr_air_flag; //远程控制空调标志位
 
-	uint8_t Inquire_BigData_FailCnt; //连续12次查询大数据没有返回，则模组整机复位
+	uint8_t Inquire_BigData_FailCnt; //连续10次查询大数据没有返回，则模组整机复位
 
 	uint8_t reconnect_flag;
+
+	uint8_t vat_init_finsh;
 	
 	char uplus_hostname[50];
 
@@ -126,14 +139,27 @@ extern LOCAL_CFG local;
 //task handle
 extern TaskHandle_t air_recv_task_handle;
 extern TaskHandle_t air_task_handle;
+extern TaskHandle_t vat_send_task_handle;
+extern TaskHandle_t vat_recv_task_handle;
+extern TaskHandle_t network_task_handle;
+extern TaskHandle_t led_task_handle;
 //queue handle
 extern QueueHandle_t uart_recv_queue;
 extern QueueHandle_t haier_app_queue;
+extern QueueHandle_t vat_send_queue;
+extern QueueHandle_t vat_recv_queue;
+extern QueueHandle_t network_queue;
 //timer handle
 extern TimerHandle_t Haier_Timers;
+extern TimerHandle_t network_Timers;
+
+extern uint32_t osiMsToOSTick(uint32_t ms);
 
 extern void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
 extern void zk_debug(uint8_t *buff, uint16_t len);
+
+extern void set_net_state(uint8_t net_state);
+extern uint8_t get_net_state(void);
 
 extern void set_sys_state(SYS_STATE sysStata);
 extern SYS_STATE get_sye_state(void);

@@ -415,7 +415,7 @@ void osiAppStart(void)
     srvPmRun();
 
     #ifdef  CONFIG_HAIER_APP
-        extern int haier_appimg_enter(void);
+        extern void haier_appimg_enter(void);
         haier_appimg_enter();
     #endif
 

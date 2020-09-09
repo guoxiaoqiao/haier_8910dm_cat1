@@ -1,8 +1,10 @@
 #include "haier_appmain.h"
-#include "vfs.h"
 
 void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
 void zk_debug(uint8_t *buff, uint16_t len);
+
+void set_net_state(uint8_t net_state);
+uint8_t get_net_state(void);
 
 void set_sys_state(SYS_STATE sysStata);
 SYS_STATE get_sye_state(void);
@@ -10,17 +12,22 @@ SYS_STATE get_sye_state(void);
 //task handle
 TaskHandle_t air_recv_task_handle;
 TaskHandle_t air_task_handle;
+TaskHandle_t vat_send_task_handle;
+TaskHandle_t vat_recv_task_handle;
+TaskHandle_t network_task_handle;
+TaskHandle_t led_task_handle;
 //queue handle
 QueueHandle_t uart_recv_queue;
 QueueHandle_t haier_app_queue;
+QueueHandle_t vat_send_queue;
+QueueHandle_t vat_recv_queue;
+QueueHandle_t network_queue;
 //timer handle
 TimerHandle_t Haier_Timers;
+TimerHandle_t network_Timers;
 
 Haier_AppSystem appSysTem;
 LOCAL_CFG local;
-
-osiPipe_t *at_rx_pipe;
-osiPipe_t *at_tx_pipe;
 
 void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout)
 {
@@ -72,6 +79,20 @@ void zk_debug(uint8_t *buff, uint16_t len)
 		OSI_LOGI(0, "%02X", p[len - j + m]);
 	}
 	OSI_LOGI(0, "*****************************end******************************");
+}
+
+void set_net_state(uint8_t net_state)
+{
+	uint32_t critical = osiEnterCritical();
+    
+	appSysTem.netCurrState = net_state;
+
+	osiExitCritical(critical);
+}
+
+uint8_t get_net_state(void)
+{
+	return appSysTem.netCurrState;
 }
 
 void set_sys_state(SYS_STATE sysStata)
@@ -174,59 +195,6 @@ static void local_cfg_init(void)
 	write_local_cfg_Info();
 }
 
-static void prvVirtAtRespCallback(void *param, unsigned event)
-{
-    osiPipe_t *pipe = (osiPipe_t *)param;
-    char buf[256];
-    for (;;)
-    {
-        int bytes = osiPipeRead(pipe, buf, 255);
-        if (bytes <= 0)
-            break;
-
-        buf[bytes] = '\0';
-        OSI_LOGXI(OSI_LOGPAR_IS, 0, "[zk vat] VAT1 <--(%d): %s", bytes, buf);
-    }
-}
-
-static void virt_at_init(void)
-{
-    osiPipe_t *at_rx_pipe1 = osiPipeCreate(512);
-    osiPipe_t *at_tx_pipe1 = osiPipeCreate(512);
-
-    if((at_rx_pipe1 == NULL) || (at_tx_pipe1 == NULL))
-    {
-        OSI_LOGE(0, "[zk vat] virt_at_init_0 Pipe Create Fail");
-        return;
-    }
-
-    at_rx_pipe = at_rx_pipe1;
-    at_tx_pipe = at_tx_pipe1;
-
-    osiPipeSetReaderCallback(at_tx_pipe, OSI_PIPE_EVENT_RX_ARRIVED, prvVirtAtRespCallback, at_tx_pipe);
-
-    atDeviceVirtConfig_t cfg = {
-        .name = OSI_MAKE_TAG('V', 'A', 'T', '1'),
-        .rx_pipe = at_rx_pipe,
-        .tx_pipe = at_tx_pipe,
-    };
-
-    atDevice_t *device = atDeviceVirtCreate(&cfg);
-    if(device == NULL)
-    {
-        OSI_LOGE(0, "[zk vat] virt_at_init_1 at Device VirtCreate Fail");
-        return;
-    }
-    atDispatch_t *dispatch = atDispatchCreate(device);
-    atDeviceSetDispatch(device, dispatch);
-    if(atDeviceOpen(device) == false)
-    {
-        OSI_LOGE(0, "[zk vat] virt_at_init_2 at Device open Fail");
-        return;
-    }
-    OSI_LOGI(0, "[zk vat] virt_at_init_3 Virt at init succ");
-}
-
 static void haier_app_IPC_created(void)
 {
 	//用于接收空调串口数据
@@ -239,7 +207,25 @@ static void haier_app_IPC_created(void)
 	haier_app_queue = xQueueCreate(5, sizeof(TASK_MSG *));
 	if(haier_app_queue == NULL)
 	{
-		OSI_LOGE(0, "haier_app_queue Created Fail");
+		OSI_LOGE(0, "[zk] haier_app_queue Created Fail");
+	}
+    //用于虚拟AT发送
+	vat_send_queue = xQueueCreate(5, sizeof(TASK_MSG *));
+	if(vat_send_queue == NULL)
+	{
+		OSI_LOGE(0, "[zk] vat_send_queue Created Fail");
+	}
+    //用于虚拟AT接收
+	vat_recv_queue = xQueueCreate(5, sizeof(TASK_MSG *));
+	if(vat_recv_queue == NULL)
+	{
+		OSI_LOGE(0, "[zk] vat_recv_queue Created Fail");
+	}
+    //用于网络任务处理
+    network_queue = xQueueCreate(5, sizeof(TASK_MSG *));
+	if(network_queue == NULL)
+	{
+		OSI_LOGE(0, "[zk] network_queue Created Fail");
 	}
 }
 
@@ -252,29 +238,58 @@ static void app_soft_timer_created(void)
 	{
 		OSI_LOGE(0, "[zk] Haier_Timers Created Fail");
 	}
+    //用于控制搜网时间
+    extern void net_timer_callback(void *argument);
+    network_Timers = xTimerCreate("network_Timer", pdMS_TO_TICKS(SEARCH_NET_MAX_TIME), pdFALSE, NULL, net_timer_callback);
+	if(network_Timers == NULL)
+	{
+		OSI_LOGE(0, "[zk] network_Timers Created Fail");
+	}
 }
 
 void app_task_created(void)
 {
 	extern void air_task_main(void *pParameter);
-	//海尔空调控制主任务 ：定时获取空调底板状态、获取环境曲线数据，并发送给海尔服务器
+	//海尔空调控制主任务 ：定时获取空调底板状态,转发服务器下发的控制数据给底板
 	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 512, NULL, OSI_PRIORITY_NORMAL+1, &air_task_handle) != pdPASS)
 	{
 		OSI_LOGE(0, "[zk] air_task_main Created Fail");
 	}
-
+    //海尔空调底板数据接收任务：负责获取底板发来的数据，并对其进行合法性判断，符合相对应条件后也负责将应用数据上报到云平台
     extern void air_recv_task_main(void *param);
-    if(xTaskCreate((TaskFunction_t)air_recv_task_main, "air_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL, &air_recv_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)air_recv_task_main, "air_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL+1, &air_recv_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] air_recv_task Created Fail");
+    }
+    //虚拟AT发送任务：为保证虚拟AT通道的互斥性，创建一个保护任务，所有向虚拟AT通道发送的数据都由此任务来进行，最大程度保证资源的原子性
+    extern void vat_send_task_main(void *pParameter);
+    if(xTaskCreate((TaskFunction_t)vat_send_task_main, "vat_send_task", 512, NULL, OSI_PRIORITY_NORMAL, &vat_send_task_handle) != pdPASS)
+    {
+        OSI_LOGE(0, "[zk] vat_send_task Created Fail");
+    }
+    //虚拟AT接收任务：接收虚拟AT通道返回的数据，并对其进行解析处理
+    extern void vat_recv_task_main(void *pParameter);
+    if(xTaskCreate((TaskFunction_t)vat_recv_task_main, "vat_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL, &vat_recv_task_handle) != pdPASS)
+    {
+        OSI_LOGE(0, "[zk] vat_recv_task Created Fail");
+    }
+    //搜网任务：负责控制模组网络联网和丢网的事件处理
+    extern void network_task_main(void *pParameter);
+    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 512, NULL, OSI_PRIORITY_NORMAL+2, &vat_recv_task_handle) != pdPASS)
+    {
+        OSI_LOGE(0, "[zk] network_task Created Fail");
+    }
+	//
+	extern void led_task_main(void *pParameter);
+	if(xTaskCreate((TaskFunction_t)led_task_main, "led_task", 256, NULL, OSI_PRIORITY_BELOW_NORMAL, &led_task_handle) != pdPASS)
+    {
+        OSI_LOGE(0, "[zk] led_task Created Fail");
     }
 }
 
 static void haier_resource_created(void)
 {
 	local_cfg_init();
-
-    virt_at_init();
 
     haier_app_IPC_created();
 
@@ -283,13 +298,7 @@ static void haier_resource_created(void)
 	app_task_created();
 }
 
-int haier_appimg_enter(void)
+void haier_appimg_enter(void)
 {
     haier_resource_created();
-
-    const char *cmd = "AT+CGMR\r\n";
-    OSI_LOGXI(OSI_LOGPAR_S, 0, "VAT1 -->: %s", cmd);
-    osiPipeWriteAll(at_rx_pipe, cmd, strlen(cmd), 1000);
-
-    return 0;
 }
