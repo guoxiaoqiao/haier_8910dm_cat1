@@ -23,6 +23,8 @@
 #include "string.h"
 #include "stdio.h"
 
+#include "haier_wtd.h"
+
 #define HAIER_FILE_NAME     "/Haier_Local.cfg"
 
 #define USER_IDENTIFIER		"USER:"

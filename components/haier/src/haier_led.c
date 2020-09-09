@@ -16,21 +16,21 @@ static void led_init(void)
     if(drv_led_mode != NULL)
     {
         red_led = drv_led_mode;
-        OSI_LOGI(0, "[zk led] gpio_Init_2 red led init suc");
+        OSI_LOGI(0, "[zk led] led_init_0 red led init suc");
     }
     //绿灯初始化为输出模式，默认高电平
     drvGpio_t *drv_led_net_ststus = drvGpioOpen(LED_NET_STATUS_PIN, &config, NULL, NULL);
     if(drv_led_net_ststus != NULL)
     {
         green_led = drv_led_net_ststus;
-        OSI_LOGI(0, "[zk led] gpio_Init_2 green led init suc");
+        OSI_LOGI(0, "[zk led] led_init_1 green led init suc");
     }
     //蓝灯初始化为输出模式，默认高电平
     drvGpio_t *drv_led_ststus = drvGpioOpen(LED_STATUS_PIN, &config, NULL, NULL);
     if(drv_led_ststus != NULL)
     {
         blue_led = drv_led_ststus;
-        OSI_LOGI(0, "[zk led] gpio_Init_2 blud led init suc");
+        OSI_LOGI(0, "[zk led] led_init_2 blud led init suc");
     }
     //上电3个灯常亮2s，然后常灭。（用于工厂工人查看灯是否良好）
     set_sys_state(SYS_STATE_POWN);
@@ -102,6 +102,7 @@ static void led_task_main_handle(void)
 
 void led_task_main(void *pParameter)
 {
+    wdg_init();
 	led_init();
 	while(1)
 	{
