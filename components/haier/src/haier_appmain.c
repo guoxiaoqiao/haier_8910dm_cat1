@@ -3,6 +3,7 @@
 void restart(uint8_t typ);
 void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
 void zk_debug(uint8_t *buff, uint16_t len);
+int os_get_random(unsigned char *buf, size_t len);
 
 void set_net_state(uint8_t net_state);
 uint8_t get_net_state(void);
@@ -39,6 +40,8 @@ void restart(uint8_t typ)
 			break;
 		case 2:
 			OSI_LOGI(0, "[zk net] restart_1: Inquire_BigData_FailCnt rest");
+		case 3:
+			OSI_LOGI(0, "[zk net] restart_1: u+ sdk rest");
 		default:
 			return;
 	}
@@ -76,6 +79,31 @@ void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len,
 		OSI_LOGE(0, "[zk] zk_queue_msg_send_2 Queue Send fail");
 	}
 }
+
+int os_get_random(unsigned char *buf, size_t len)
+{    
+	int i, j;    
+	unsigned long tmp;     
+
+	for (i = 0; i < ((len + 3) & ~3) / 4; i++) 
+	{        
+		//tmp = r_rand();    
+		tmp = rand();    
+		for (j = 0; j < 4; j++) 
+		{            
+			if ((i * 4 + j) < len) 
+			{                
+				buf[i * 4 + j] = (uint8_t)(tmp >> (j * 8));
+			} 
+			else 
+			{                
+				break;            
+			}        
+		}    
+	}     
+	return 0;
+}
+
 
 void zk_debug(uint8_t *buff, uint16_t len)
 {
@@ -267,37 +295,37 @@ void app_task_created(void)
 {
 	extern void air_task_main(void *pParameter);
 	//海尔空调控制主任务 ：定时获取空调底板状态,转发服务器下发的控制数据给底板
-	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 512, NULL, OSI_PRIORITY_NORMAL+1, &air_task_handle) != pdPASS)
+	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 512, NULL, OSI_PRIORITY_NORMAL+2, &air_task_handle) != pdPASS)
 	{
 		OSI_LOGE(0, "[zk] air_task_main Created Fail");
 	}
     //海尔空调底板数据接收任务：负责获取底板发来的数据，并对其进行合法性判断，符合相对应条件后也负责将应用数据上报到云平台
     extern void air_recv_task_main(void *param);
-    if(xTaskCreate((TaskFunction_t)air_recv_task_main, "air_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL+1, &air_recv_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)air_recv_task_main, "air_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL+2, &air_recv_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] air_recv_task Created Fail");
     }
     //虚拟AT发送任务：为保证虚拟AT通道的互斥性，创建一个保护任务，所有向虚拟AT通道发送的数据都由此任务来进行，最大程度保证资源的原子性
     extern void vat_send_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)vat_send_task_main, "vat_send_task", 512, NULL, OSI_PRIORITY_NORMAL, &vat_send_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)vat_send_task_main, "vat_send_task", 512, NULL, OSI_PRIORITY_NORMAL+1, &vat_send_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] vat_send_task Created Fail");
     }
     //虚拟AT接收任务：接收虚拟AT通道返回的数据，并对其进行解析处理
     extern void vat_recv_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)vat_recv_task_main, "vat_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL, &vat_recv_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)vat_recv_task_main, "vat_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL+1, &vat_recv_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] vat_recv_task Created Fail");
     }
     //搜网任务：负责控制模组网络联网和丢网的事件处理
     extern void network_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 512, NULL, OSI_PRIORITY_NORMAL+2, &vat_recv_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 512, NULL, OSI_PRIORITY_NORMAL+3, &vat_recv_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] network_task Created Fail");
     }
 	//
 	extern void led_task_main(void *pParameter);
-	if(xTaskCreate((TaskFunction_t)led_task_main, "led_task", 256, NULL, OSI_PRIORITY_BELOW_NORMAL, &led_task_handle) != pdPASS)
+	if(xTaskCreate((TaskFunction_t)led_task_main, "led_task", 256, NULL, OSI_PRIORITY_NORMAL, &led_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] led_task Created Fail");
     }

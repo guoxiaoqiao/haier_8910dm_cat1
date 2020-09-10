@@ -25,8 +25,10 @@ target_include_directories(${target} PRIVATE ../kernel/chip/8910)
 #target_include_directories(${target} PRIVATE ../hal/include)
 #target_include_directories(${target} PRIVATE ../hal/include/Core_A)
 target_include_targets(${target} PRIVATE atr)
+target_include_directories(${target} PRIVATE ../net/lwip/src/include/lwip)
+target_include_directories(${target} PRIVATE ../net/mbedtls/include/mbedtls)
 
-target_link_libraries(${target} PRIVATE kernel driver net fs)
+target_link_libraries(${target} PRIVATE kernel driver net fs lwip mbedtls)
 
 aux_source_directory(./src DIR_SRCS)
 message("haier app ${DIR_SRCS}")

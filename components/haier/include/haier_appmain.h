@@ -17,7 +17,7 @@
 #include "task.h"
 #include "timers.h"
 #include "queue.h"
-//#include "semphr.h"
+#include "semphr.h"
 
 #include "stdlib.h"
 #include "string.h"
@@ -160,6 +160,7 @@ extern uint32_t osiMsToOSTick(uint32_t ms);
 extern void restart(uint8_t typ);
 extern void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
 extern void zk_debug(uint8_t *buff, uint16_t len);
+extern int os_get_random(unsigned char *buf, size_t len);
 
 extern void set_net_state(uint8_t net_state);
 extern uint8_t get_net_state(void);
