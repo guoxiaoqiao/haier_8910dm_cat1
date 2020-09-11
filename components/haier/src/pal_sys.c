@@ -540,7 +540,7 @@ uplus_s32 uplus_sys_config_read(uplus_u8 config_zone, uplus_u8 *conf, uplus_size
 		return -1;
 	}
 
-	if (vfs_lseek(fd, 0, SEEK_SET) != 0)
+	if (vfs_lseek(fd, 0, SEEK_SET) < 0)
     {
         uplus_sys_log("[zk u+] sys_config_read_1: lseek Fail");
         vfs_close(fd);
@@ -584,7 +584,7 @@ uplus_s32 uplus_sys_config_write(uplus_u8 config_zone, uplus_u8 *conf, uplus_siz
 		return -1;
 	}
 
-	if (vfs_lseek(fd, 0, SEEK_SET) != 0)
+	if (vfs_lseek(fd, 0, SEEK_SET) < 0)
     {
         uplus_sys_log("[zk u+] sys_config_write_1: lseek Fail");
         vfs_close(fd);
@@ -798,7 +798,7 @@ uplus_s32 uplus_sys_res_area_read(uplus_u32 offset, uplus_u8 *buf, uplus_size_t 
 		return -1;
 	}
 
-	if (vfs_lseek(fd, offset, SEEK_SET) != 0)
+	if (vfs_lseek(fd, offset, SEEK_SET) < 0)
     {
         uplus_sys_log("[zk u+] sys_res_area_read_1: lseek Fail");
         vfs_close(fd);
@@ -838,7 +838,7 @@ uplus_s32 uplus_sys_res_area_write(uplus_u32 offset, uplus_u8 *buf, uplus_size_t
 		return -1;
 	}
 
-	if (vfs_lseek(fd, offset, SEEK_SET) != 0)
+	if (vfs_lseek(fd, offset, SEEK_SET) < 0)
     {
         uplus_sys_log("[zk u+] sys_res_area_write_1: lseek Fail");
         vfs_close(fd);
@@ -936,10 +936,10 @@ uplus_u32 uplus_sys_file_seek(uplus_s32 fd, uplus_s32 offset, uplus_s32 whence)
 {
 	int off = vfs_lseek(fd, offset, whence-1);
 	uplus_sys_log("[zk u+] sys_file_seek:%d", off);
-	if(off > 0)
-		return 0;
-	else
+	if(off < 0)
 		return -1;
+	else
+		return 0;
 }
 
 /*!
