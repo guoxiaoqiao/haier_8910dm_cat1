@@ -1402,7 +1402,7 @@ extern uplus_s32 uplus_wifi_snr_get(uplus_u8 *snr);
  * \param [in] extra_error  WIFI_FOWN时的附加错误码 WIFI_DOWN_XXX
  * \return 成功返回0，失败返回-1。
  */
-//extern uplus_s32 uplus_wifi_status_callback(uplus_u8 status, uplus_s32 extra_error);
+extern uplus_s32 uplus_wifi_status_callback(uplus_u8 status, uplus_s32 extra_error);
 
 
 #if 0

@@ -90,9 +90,9 @@ uplus_s32 uplus_os_mutex_create(uplus_mutex_id *id)
 uplus_s32 uplus_os_mutex_take(uplus_mutex_id id, uplus_s32 time_wait)
 { 
 	uint32_t wait_tick = 0;
-	if(time_wait == 0)
+	if(time_wait == TIME_NO_WAIT)
 		wait_tick = 0;
-	else if (time_wait == -1)
+	else if (time_wait == TIME_WAIT_FOREVER)
 	{
 		wait_tick = portMAX_DELAY;
 	}
