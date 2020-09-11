@@ -48,6 +48,51 @@ void test1_task_main(void *pParameter)
 	}
 }
 
+static void pal_os_api_test(void)
+{
+    OSI_LOGI(0, "[zk test2] test2_task RUN...");
+    uplus_os_task_sleep(1000);
+    resource(2);
+    uplus_time cur_ticks = uplus_os_current_time_get();
+    OSI_LOGI(0, "[zk test2] cur_ticks=%d", cur_ticks);
+    uplus_os_task_sleep(2000);
+    uplus_time cur_ticks1 = uplus_os_current_time_get();
+    OSI_LOGI(0, "[zk test2] cur_ticks1=%d", cur_ticks1);
+    uplus_time diff_ms = uplus_os_diff_time_cal(cur_ticks1, cur_ticks);
+    OSI_LOGI(0, "[zk test2] diff_ms=%d", diff_ms);
+    uplus_os_task_sleep(2000);
+
+    uplus_os_sem_give(sem_id);
+
+    uplus_os_task_sleep(500);
+
+    uplus_os_task_delete(test1_id);
+}
+
+static void pal_tools_api_test(void)
+{
+    uint16_t bufflen = 200;
+    char *testbuff = (char*)uplus_tool_data_malloc(bufflen);
+    if(testbuff == NULL)
+    {
+        uplus_sys_debug_printf("uplus_debug:malloc fial len=%d", bufflen);
+        uplus_sys_log("uplus_log:malloc fial len=%d", bufflen);
+        return;
+    }
+    uplus_tool_memset(testbuff, 0, bufflen);
+
+    uplus_tool_srand(0x12345678);
+    uplus_s32 radns = uplus_tool_rand();
+    uplus_sys_log("tools_api_test_0:radns=0x%x", radns);
+
+    uplus_tool_snprintf(testbuff, bufflen, "%s", "zhang kai zhen shuai");
+
+    uplus_sys_debug_printf("len=%d:%s", uplus_tool_strlen(testbuff), testbuff);
+    uplus_sys_log("len=%d:%s", uplus_tool_strlen(testbuff), testbuff);
+
+    uplus_tool_free(testbuff);
+}
+
 void test2_task_main(void *pParameter)
 {
     uint8_t parm = *(uint8_t *)pParameter;
@@ -58,23 +103,10 @@ void test2_task_main(void *pParameter)
     }
 	while(1)
 	{
-        OSI_LOGI(0, "[zk test2] test2_task RUN...");
-        uplus_os_task_sleep(1000);
-        resource(2);
-		uplus_time cur_ticks = uplus_os_current_time_get();
-        OSI_LOGI(0, "[zk test2] cur_ticks=%d", cur_ticks);
-        uplus_os_task_sleep(2000);
-        uplus_time cur_ticks1 = uplus_os_current_time_get();
-        OSI_LOGI(0, "[zk test2] cur_ticks1=%d", cur_ticks1);
-        uplus_time diff_ms = uplus_os_diff_time_cal(cur_ticks1, cur_ticks);
-        OSI_LOGI(0, "[zk test2] diff_ms=%d", diff_ms);
-        uplus_os_task_sleep(2000);
+        pal_os_api_test();
 
-        uplus_os_sem_give(sem_id);
+        pal_tools_api_test();
 
-        uplus_os_task_sleep(500);
-
-        uplus_os_task_delete(test1_id);
         OSI_LOGI(0, "[zk test2] test2_task end");
         uplus_os_task_delete(NULL);
 	}
