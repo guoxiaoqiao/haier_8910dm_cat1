@@ -225,15 +225,99 @@ static void pal_net_api_test(void)
 
     memset(str_ip_addr, 0, sizeof(str_ip_addr));
     uplus_net_dns_request("www.baidu.com", str_ip_addr);
-    uplus_sys_log("net_api_test_10:%s", str_ip_addr);
 
     memset(str_ip_addr, 0, sizeof(str_ip_addr));
     uplus_net_dns_request("gw.haier.net", str_ip_addr);
-    uplus_sys_log("net_api_test_11:%s", str_ip_addr);
-    
+
     memset(str_ip_addr, 0, sizeof(str_ip_addr));
     uplus_net_dns_request("gw-sea.haieriot.net", str_ip_addr);
-    uplus_sys_log("net_api_test_12:%s", str_ip_addr);
+}
+
+static void socket_api_test(void)
+{	
+	//struct timeval tm={0};
+    //fd_set ReadSet;
+	//int32_t Result;
+
+    /*while((get_sye_state() != SYS_STATE_REG))
+    {
+        uplus_os_task_sleep(2000);
+    }
+    uplus_os_task_sleep(2000);*/
+    int socketfd;
+    int connErr;
+    struct sockaddr_in tcp_server_addr = {0}; 
+
+	char ipaddr[20] = {0};
+	//unsigned short port = 12415;  //56626;
+	//memcpy(ipaddr, SERVER_TCP_IP, sizeof(SERVER_TCP_IP));
+	
+	uplus_net_dns_request("gw-sea.haieriot.net", ipaddr);
+	//memcpy(ipaddr, "101.200.183.79", sizeof("101.200.183.79"));
+	unsigned short port = 56814;//56808;  
+    // 创建tcp socket
+    socketfd = uplus_net_socket_create(AF_INET, SOCK_STREAM, 0);
+    /*if (socketfd < 0)
+    {
+        uplus_sys_log("[socket] create tcp socket error");
+        return;
+    }
+       
+    uplus_sys_log("[socket] create tcp socket success");*/
+
+	uint8_t optval[4] = {1,0,0,0};
+	uplus_net_socket_opt_set(socketfd, 0, 1, optval, 4);
+	uplus_net_socket_opt_set(socketfd, 2, 1, optval, 4);
+    
+    // 建立TCP链接 
+    tcp_server_addr.sin_family = AF_INET;  
+    tcp_server_addr.sin_port = uplus_net_htons(port);  
+    inet_aton(ipaddr,&tcp_server_addr.sin_addr);
+    tcp_server_addr.sin_addr.s_addr = uplus_net_inet_addr(ipaddr);
+
+    //uplus_sys_log("[socket] tcp connect to addr %s", ipaddr);
+    /*struct uplus_sockaddr u_sockaddr = {0};
+    memcpy(&u_sockaddr, &tcp_server_addr, sizeof(struct uplus_sockaddr));
+    uplus_net_socket_connect(socketfd, &u_sockaddr, sizeof(struct uplus_sockaddr));*/
+    connErr = lwip_connect(socketfd, (const struct sockaddr *)&tcp_server_addr, sizeof(struct sockaddr));
+    uplus_sys_log("[socket] tcp connect connErr=%d", connErr);
+
+    uplus_net_socket_close(socketfd);
+    //uplus_sys_log("[socket] tcp close connErr=%d", connErr);
+
+
+	//uplus_net_ssl_client_create(socketfd, NULL, 0);
+		
+	/*FD_ZERO(&ReadSet);
+    FD_SET(socketfd, &ReadSet);
+	uint8 Buf[100];
+	uint16 RxLen=5;
+	
+	tm.tv_sec = 10;
+   	tm.tv_usec = 0;
+	
+	Result = select(socketfd + 1, &ReadSet, NULL, NULL, &tm);
+    if(Result > 0)
+    {
+    	Result = recv(socketfd, Buf, RxLen, 0);
+        if(Result == 0)
+        {
+        	iot_debug_print("[zk test]socket close!");
+            return -1;
+        }
+        else if(Result < 0)
+        {
+        	iot_debug_print("[zk test]recv error %d", socket_errno(socketfd));
+            return -1;
+        }
+        //iot_debug_print("SSL_SocketRx:recv %d %x %x %x %x %x", Result, p[0], p[1], p[2], p[3], p[4]);
+		return Result;
+    }
+    else
+    {
+    	iot_debug_print("[zk test] read timeout");
+    	return -1;
+    }*/
 }
 
 void test2_task_main(void *pParameter)
@@ -250,6 +334,8 @@ void test2_task_main(void *pParameter)
 
         pal_net_api_test();
 
+        socket_api_test();
+
         OSI_LOGI(0, "[zk test2] test2_task end");
         uplus_os_task_delete(NULL);
 	}
@@ -262,5 +348,5 @@ void uplus_sdk_test(void)
 
     //uplus_os_task_create("task1", 256, 5, test1_task_main, (void *)&tset1_param, &test1_id);
 
-    uplus_os_task_create("task2", 256, 4, test2_task_main, (void *)&tset2_param, &test2_id);
+    uplus_os_task_create("task2", 512, 4, test2_task_main, (void *)&tset2_param, &test2_id);
 }

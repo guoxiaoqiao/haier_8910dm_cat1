@@ -89,12 +89,12 @@ uplus_s32 uplus_net_socket_listen(uplus_s32 sockfd, uplus_s32 backlog)
  */
 uplus_s32 uplus_net_socket_accept(uplus_s32 sockfd, struct uplus_sockaddr *addr, uplus_socklen_t *addrlen)
 {
-	struct sockaddr z_addr = {0};
+	//struct sockaddr z_addr = {0};
 	
-	z_addr.sa_family = addr->sa_family;
-	memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
+	//z_addr.sa_family = addr->sa_family;
+	//memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
 
-	int result = accept(sockfd, &z_addr, addrlen);
+	int result = accept(sockfd, addr, addrlen);
 	if(result < 0)
 	{
 		uplus_sys_log("[zk u+] net_socket_accept:error=%d", uplus_net_last_error_get(sockfd, NULL));
@@ -182,14 +182,14 @@ uplus_s32 uplus_net_socket_recv(uplus_s32 sockfd, void *buf, uplus_size_t len, u
  */
 uplus_s32 uplus_net_socket_recvfrom(uplus_s32 sockfd, void *buf, int len, int flags, struct uplus_sockaddr *addr, uplus_socklen_t *addrlen)
 {
-	struct sockaddr z_addr = {0};
+	//struct sockaddr z_addr = {0};
 	
-	z_addr.sa_family = addr->sa_family;
-	memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
+	//z_addr.sa_family = addr->sa_family;
+	//memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
 	
 	uplus_sys_log("[zk u+] socket_recvfrom");
 	
-	return recvfrom(sockfd, buf, len, flags, &z_addr, addrlen);
+	return recvfrom(sockfd, buf, len, flags, addr, addrlen);
 
 	/*uplus_sys_log("[zk u+] socket_recvfrom");
 	
@@ -594,6 +594,17 @@ static int gethostbyname(char *hostname, char *ip_addr)
 	dns_parsing_falg = 0;
 	dns_gethostbyname(hostname, &addres, zk_found_callback, ip_addr);
 
+	if(addres.s_addr != 0)
+	{
+		char *str_ip = uplus_net_inet_ntoa(addres);
+		if(str_ip != NULL)
+		{
+			strcpy(ip_addr, str_ip);
+			uplus_sys_log("[zk u+] gethostbyname_0: %s -> %s", hostname, ip_addr);
+			return 0;
+		}
+	}
+
 	while((dns_parsing_falg==0) && (cnt < DNS_PARSING_WAIT_TIME_MAX))
 	{
 		uplus_os_task_sleep(5);
@@ -603,16 +614,16 @@ static int gethostbyname(char *hostname, char *ip_addr)
 	switch (dns_parsing_falg)
 	{
 		case 0:
-			uplus_sys_log("[zk u+] gethostbyname_0: %s-> parsing time out", hostname);
+			uplus_sys_log("[zk u+] gethostbyname_1: %s-> parsing time out", hostname);
 			return -1;
 		case 1:
-			uplus_sys_log("[zk u+] gethostbyname_1: %s-> parsing fail", hostname);
+			uplus_sys_log("[zk u+] gethostbyname_2: %s-> parsing fail", hostname);
 			return -1;
 		case 2:
-			uplus_sys_log("[zk u+] gethostbyname_2: %s -> %s", hostname, ip_addr);
+			uplus_sys_log("[zk u+] gethostbyname_3: %s -> %s", hostname, ip_addr);
 			return 0;
 		default:
-			uplus_sys_log("[zk u+] gethostbyname_3: not error");
+			uplus_sys_log("[zk u+] gethostbyname_4: not error");
 			return -1;
 	}
 }
@@ -626,11 +637,11 @@ static int gethostbyname(char *hostname, char *ip_addr)
  */
 uplus_s32 uplus_net_dns_request(const uplus_s8 *hostname, uplus_s8 *ip_addr)
 {
-	//uplus_sys_log("[zk u+] net_dns_request hostname=%s", hostname);
+	uplus_sys_log("[zk u+] net_dns_request hostname=%s", hostname);
 
 	int result = gethostbyname((char *)hostname, (char *)ip_addr);
 
-	//uplus_sys_log("[zk u+] net_dns_request ip:%s", ip_addr);
+	uplus_sys_log("[zk u+] net_dns_request ip:%s", ip_addr);
 	
 	return result;
 }
