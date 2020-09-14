@@ -261,12 +261,6 @@ uplus_s32 uplus_net_socket_opt_set (uplus_s32 sockfd, uplus_s32 level, uplus_s32
 	uplus_sys_log("[zk u+] socket_opt_set:socket=%d level=0x%x optname=0x%x optlen=%d result=%d", sockfd, level_1, optname_1, optlen,result);
 	
 	return result;
-
-	/*int result = setsockopt(sockfd, level, optname, optval, optlen);
-
-	uplus_sys_log("[zk u+] socket_opt_set:socket=%d level=0x%x optname=0x%x optlen=%d result=%d", sockfd, level, optname, optlen,result);
-	
-	return result;*/
 }
 
  
@@ -349,7 +343,8 @@ uplus_u32 uplus_net_inet_addr(const uplus_s8 *cp)
 {
 	uplus_u32 addr = 0;
 	
-	inet_aton(cp, &addr);
+	addr = inet_addr((char *)cp);
+	//inet_aton(cp, &addr);
 
 	//uplus_sys_log("[zk u+] net_inet_addr:cp=%s addr=%x", cp, addr);
 
@@ -433,8 +428,10 @@ uplus_s32 uplus_net_fd_isset(uplus_s32 fd, void *set)
 	fd_set *p = (fd_set*)set;
 	
 	//uplus_sys_log("[zk u+] net_fd_isset fd=%d p[0]=%x p[1]=%x p[2]=%x p[3]=%x", fd, p->fd_bits[0], p->fd_bits[1], p->fd_bits[2], p->fd_bits[3]);
-	
-	return FD_ISSET(fd, p);
+	if(FD_ISSET(fd, p) != 0)
+		return 1;
+	else
+		return 0;
 }
 
 /*!
@@ -532,8 +529,8 @@ uplus_s32 uplus_net_dns_config(uplus_u8 op, uplus_s8 *dns_server)
 	}
 	if(op == OP_SET)
 	{	
-		uplus_sys_log("[zk u+] net_dns_config OP_SET dns_server=%s", dns_server);
 		uplus_u32 addr = uplus_net_inet_addr(dns_server);
+		uplus_sys_log("[zk u+] net_dns_config OP_SET dns_server=%s addr=0x%x", dns_server, addr);
 		dns_setserver(0, &addr);
 		
 		return 0;
@@ -545,21 +542,79 @@ uplus_s32 uplus_net_dns_config(uplus_u8 op, uplus_s8 *dns_server)
 		addres1.s_addr = addres->s_addr;
 		char *str_ip = uplus_net_inet_ntoa(addres1);
 		if(str_ip == NULL)
-			return -1;
+		{
+			addres = (struct uplus_in_addr *)dns_getserver(1);
+			addres1.s_addr = addres->s_addr;
+			str_ip = uplus_net_inet_ntoa(addres1);
+			if(str_ip == NULL)
+			{
+				uplus_sys_log("[zk u+] net_dns_config OP_GET error");
+				return -1;
+			}
+			else
+				strcpy(dns_server, str_ip);
+		}
 		else
 			strcpy(dns_server, str_ip);
+
+		//这段代码只是把备用DNS显示出来， 用于调试
+		addres = (struct uplus_in_addr *)dns_getserver(1);
+		addres1.s_addr = addres->s_addr;
 		
-		uplus_sys_log("[zk u+] net_dns_config OP_GET dns_server=%s", dns_server);
+		uplus_sys_log("[zk u+] net_dns_config OP_GET dns_server1=%s dns_server2=%s", dns_server, uplus_net_inet_ntoa(addres1));
 
 		return 0;
 	}
 }
 
+#define DNS_PARSING_WAIT_TIME_MAX	(30000/5)
+static uint8_t dns_parsing_falg;
 void zk_found_callback(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
 {
 	struct uplus_in_addr addr = {0};
+	char *ip_addr = (char *)callback_arg;
+
 	addr.s_addr = ipaddr->u_addr.ip4.addr;
-	uplus_sys_log("[zk u+] zk_found_callback: %s -> %s", name, uplus_net_inet_ntoa(addr));
+	char *str_ip = uplus_net_inet_ntoa(addr);
+	if(str_ip == NULL)
+	{
+		dns_parsing_falg = 1;
+		return;
+	}
+	dns_parsing_falg = 2;
+	strcpy(ip_addr, str_ip);
+	//uplus_sys_log("[zk u+] zk_found_callback: %s -> %s", name, uplus_net_inet_ntoa(addr));
+}
+
+static int gethostbyname(char *hostname, char *ip_addr)
+{
+	struct uplus_in_addr addres = {0};
+	uint16_t cnt = 0;
+
+	dns_parsing_falg = 0;
+	dns_gethostbyname(hostname, &addres, zk_found_callback, ip_addr);
+
+	while((dns_parsing_falg==0) && (cnt < DNS_PARSING_WAIT_TIME_MAX))
+	{
+		uplus_os_task_sleep(5);
+		cnt++;
+	}
+
+	switch (dns_parsing_falg)
+	{
+		case 0:
+			uplus_sys_log("[zk u+] gethostbyname_0: %s-> parsing time out", hostname);
+			return -1;
+		case 1:
+			uplus_sys_log("[zk u+] gethostbyname_1: %s-> parsing fail", hostname);
+			return -1;
+		case 2:
+			uplus_sys_log("[zk u+] gethostbyname_2: %s -> %s", hostname, ip_addr);
+			return 0;
+		default:
+			uplus_sys_log("[zk u+] gethostbyname_3: not error");
+			return -1;
+	}
 }
 
 /*!
@@ -571,16 +626,13 @@ void zk_found_callback(const char *name, const ip_addr_t *ipaddr, void *callback
  */
 uplus_s32 uplus_net_dns_request(const uplus_s8 *hostname, uplus_s8 *ip_addr)
 {
-	struct uplus_in_addr addres = {0};
-	uplus_sys_log("[zk u+] net_dns_request hostname=%s", hostname);
+	//uplus_sys_log("[zk u+] net_dns_request hostname=%s", hostname);
 
-	dns_gethostbyname(hostname, &addres, zk_found_callback, NULL);
+	int result = gethostbyname((char *)hostname, (char *)ip_addr);
 
-	strcpy(ip_addr, uplus_net_inet_ntoa(addres));
-
-	uplus_sys_log("[zk u+] net_dns_request ip:%s", ip_addr);
+	//uplus_sys_log("[zk u+] net_dns_request ip:%s", ip_addr);
 	
-	return 0;
+	return result;
 }
 
 void uplus_net_dhcp_offer_ip(uplus_s8 * offered_ip)

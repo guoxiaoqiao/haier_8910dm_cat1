@@ -344,7 +344,7 @@ static void haier_resource_created(void)
 
 void haier_appimg_enter(void)
 {
-    //haier_resource_created();
+    haier_resource_created();
 
 	extern void uplus_sdk_test(void);
 	uplus_sdk_test();

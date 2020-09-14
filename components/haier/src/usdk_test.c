@@ -1,4 +1,5 @@
 #include "pal_common.h"
+#include "dns.h"
 
 void uplus_sdk_test(void);
 
@@ -187,17 +188,67 @@ static void pal_sys_api_test(void)
     uplus_tool_random_generate((uplus_u8 *)buff1, 4);
 }
 
+static void pal_net_api_test(void)
+{
+    while((get_sye_state() != SYS_STATE_REG))
+    {
+        uplus_os_task_sleep(2000);
+    }
+    uplus_os_task_sleep(2000);
+    char *str_addr = "192.168.1.1";
+    uint32_t ip_addr = uplus_net_inet_addr(str_addr);
+    uplus_sys_log("net_api_test_0:%s -> 0x%x", str_addr, ip_addr);
+    uplus_sys_log("net_api_test_1:0x%x", uplus_net_ntohl(ip_addr));
+    uplus_sys_log("net_api_test_2:0x%x", uplus_net_htonl(uplus_net_ntohl(ip_addr)));
+
+    uplus_sys_log("net_api_test_3:0x%x", uplus_net_ntohs(0x1234));
+    uplus_sys_log("net_api_test_4:0x%x", uplus_net_htons(0x3412));
+
+    struct uplus_in_addr in= {0};
+    in.s_addr = ip_addr;
+    uplus_sys_log("net_api_test_5:0x%x -> %s", in.s_addr, uplus_net_inet_ntoa(in));
+
+    uplus_net_fd_size();
+    fd_set fd;
+    fd.fd_bits[0] = 0x55;
+    uplus_net_fd_zero(&fd);
+    uplus_sys_log("net_api_test_7:fd zero=%d", fd.fd_bits[0]);
+    uplus_net_fd_set(8, &fd);
+    uplus_sys_log("net_api_test_8:fd set=0x%x", fd.fd_bits[0]);
+    uplus_sys_log("net_api_test_9:fd iseet=%d", uplus_net_fd_isset(8, &fd));
+    uplus_net_fd_clr(8, &fd);
+    uplus_sys_log("net_api_test_9:fd clr=%d", fd.fd_bits[0]);
+
+    //uplus_net_dns_config(OP_SET, "8.8.8.8");
+    char str_ip_addr[20] = {0};
+    uplus_net_dns_config(OP_GET, str_ip_addr);
+
+    memset(str_ip_addr, 0, sizeof(str_ip_addr));
+    uplus_net_dns_request("www.baidu.com", str_ip_addr);
+    uplus_sys_log("net_api_test_10:%s", str_ip_addr);
+
+    memset(str_ip_addr, 0, sizeof(str_ip_addr));
+    uplus_net_dns_request("gw.haier.net", str_ip_addr);
+    uplus_sys_log("net_api_test_11:%s", str_ip_addr);
+    
+    memset(str_ip_addr, 0, sizeof(str_ip_addr));
+    uplus_net_dns_request("gw-sea.haieriot.net", str_ip_addr);
+    uplus_sys_log("net_api_test_12:%s", str_ip_addr);
+}
+
 void test2_task_main(void *pParameter)
 {
     uint8_t parm = *(uint8_t *)pParameter;
     OSI_LOGI(0, "[zk test2] parm2=%d", parm);
 	while(1)
 	{
-        pal_os_api_test();
+        //pal_os_api_test();
 
-        pal_tools_api_test();
+        //pal_tools_api_test();
 
-        pal_sys_api_test();
+        //pal_sys_api_test();
+
+        pal_net_api_test();
 
         OSI_LOGI(0, "[zk test2] test2_task end");
         uplus_os_task_delete(NULL);
@@ -209,7 +260,7 @@ void uplus_sdk_test(void)
     static uint8_t tset1_param = 1;
     static uint8_t tset2_param = 2;
 
-    uplus_os_task_create("task1", 256, 5, test1_task_main, (void *)&tset1_param, &test1_id);
+    //uplus_os_task_create("task1", 256, 5, test1_task_main, (void *)&tset1_param, &test1_id);
 
     uplus_os_task_create("task2", 256, 4, test2_task_main, (void *)&tset2_param, &test2_id);
 }
