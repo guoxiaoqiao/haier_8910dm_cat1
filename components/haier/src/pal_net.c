@@ -45,12 +45,7 @@ uplus_s32 uplus_net_socket_close(uplus_s32 fd)
  */
 uplus_s32 uplus_net_socket_bind(uplus_s32 sockfd, const struct uplus_sockaddr *addr, uplus_socklen_t addrlen)
 {
-	struct sockaddr z_addr = {0};
-	
-	z_addr.sa_family = addr->sa_family;
-	memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
-	
-	int result = bind(sockfd, &z_addr, sizeof(struct sockaddr));
+	int result = bind(sockfd, (struct sockaddr *)addr, sizeof(struct sockaddr));
 
 	if(result < 0)
 	{
@@ -60,12 +55,6 @@ uplus_s32 uplus_net_socket_bind(uplus_s32 sockfd, const struct uplus_sockaddr *a
 	uplus_sys_log("[zk u+] socket_bind:socket=%d result=%d", sockfd, result);
 	
 	return result;
-
-	/*int result = bind(sockfd, addr, addrlen);
-	
-	uplus_sys_log("[zk u+] socket_bind:socket=%d result=%d", sockfd, result);
-
-	return result;*/
 }
 
 /*!
@@ -89,12 +78,7 @@ uplus_s32 uplus_net_socket_listen(uplus_s32 sockfd, uplus_s32 backlog)
  */
 uplus_s32 uplus_net_socket_accept(uplus_s32 sockfd, struct uplus_sockaddr *addr, uplus_socklen_t *addrlen)
 {
-	//struct sockaddr z_addr = {0};
-	
-	//z_addr.sa_family = addr->sa_family;
-	//memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
-
-	int result = accept(sockfd, addr, addrlen);
+	int result = accept(sockfd, (struct sockaddr *)addr, addrlen);
 	if(result < 0)
 	{
 		uplus_sys_log("[zk u+] net_socket_accept:error=%d", uplus_net_last_error_get(sockfd, NULL));
@@ -103,12 +87,6 @@ uplus_s32 uplus_net_socket_accept(uplus_s32 sockfd, struct uplus_sockaddr *addr,
 	uplus_sys_log("[zk u+] socket_accept:sockfd=%d result=%d", sockfd, result);
 	
 	return result;
-
-	/*int result = accept(sockfd, addr, addrlen);
-	
-	uplus_sys_log("[zk u+] socket_accept:sockfd=%d result=%d", sockfd, result);
-	
-	return result;*/
 }
 
 /*!
@@ -116,12 +94,15 @@ uplus_s32 uplus_net_socket_accept(uplus_s32 sockfd, struct uplus_sockaddr *addr,
  */
 uplus_s32 uplus_net_socket_connect(uplus_s32 sockfd, const struct uplus_sockaddr *addr, uplus_socklen_t addrlen)
 {
-	struct sockaddr z_addr = {0};
+	struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
+	addr_in->sin_family = addr_in->sin_len;
+	addr_in->sin_len = 0;
 	
-	z_addr.sa_family = addr->sa_family;
-	memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
-	
-	int result = connect(sockfd, &z_addr, sizeof(struct sockaddr));
+	struct uplus_in_addr ip_addr = {0};
+	ip_addr.s_addr = addr_in->sin_addr.s_addr;
+	uplus_sys_log("[zk u+] net_socket_connect:len=%d family=%d port=%d ip=%s", addr_in->sin_len, addr_in->sin_family, addr_in->sin_port, uplus_net_inet_ntoa(ip_addr));
+
+	int result = connect(sockfd, (struct sockaddr *)addr, sizeof(struct sockaddr));
 	if(result < 0)
 	{
 		uplus_sys_log("[zk u+] net_socket_connect:error=%d", uplus_net_last_error_get(sockfd, NULL));
@@ -130,12 +111,6 @@ uplus_s32 uplus_net_socket_connect(uplus_s32 sockfd, const struct uplus_sockaddr
 	uplus_sys_log("[zk u+] socket_connect:socket=%d result=%d", sockfd, result);
 	
 	return result;
-
-	/*int result = connect(sockfd, addr, addrlen);
-	
-	uplus_sys_log("[zk u+] socket_connect:socket=%d result=%d", sockfd, result);
-	
-	return result;*/
 }
 
 /*!
@@ -153,18 +128,9 @@ uplus_s32 uplus_net_socket_send(uplus_s32 sockfd, const void *buf, uplus_size_t 
  */
 uplus_s32 uplus_net_socket_sendto(uplus_s32 sockfd, const void *buf, uplus_size_t len, uplus_s32 flags, const struct uplus_sockaddr *addr, uplus_socklen_t addrlen)
 {
-	struct sockaddr z_addr = {0};
-	
-	z_addr.sa_family = addr->sa_family;
-	memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
-	
 	uplus_sys_log("[zk u+] socket_sendto");
 	
-	return sendto(sockfd, buf, len, flags, &z_addr, sizeof(struct sockaddr));
-
-	/*uplus_sys_log("[zk u+] socket_sendto");
-	
-	return sendto(sockfd, buf, len, flags, addr, addrlen);*/
+	return sendto(sockfd, buf, len, flags, (struct sockaddr *)addr, sizeof(struct sockaddr));
 }
 
 /*!
@@ -182,18 +148,9 @@ uplus_s32 uplus_net_socket_recv(uplus_s32 sockfd, void *buf, uplus_size_t len, u
  */
 uplus_s32 uplus_net_socket_recvfrom(uplus_s32 sockfd, void *buf, int len, int flags, struct uplus_sockaddr *addr, uplus_socklen_t *addrlen)
 {
-	//struct sockaddr z_addr = {0};
-	
-	//z_addr.sa_family = addr->sa_family;
-	//memcpy(z_addr.sa_data, addr->sa_data, sizeof(addr->sa_data));
-	
 	uplus_sys_log("[zk u+] socket_recvfrom");
 	
-	return recvfrom(sockfd, buf, len, flags, addr, addrlen);
-
-	/*uplus_sys_log("[zk u+] socket_recvfrom");
-	
-	return recvfrom(sockfd, buf, len, flags, addr, addrlen);*/
+	return recvfrom(sockfd, buf, len, flags, (struct sockaddr *)addr, addrlen);
 }
 
 /*!
@@ -531,7 +488,7 @@ uplus_s32 uplus_net_dns_config(uplus_u8 op, uplus_s8 *dns_server)
 	{	
 		uplus_u32 addr = uplus_net_inet_addr(dns_server);
 		uplus_sys_log("[zk u+] net_dns_config OP_SET dns_server=%s addr=0x%x", dns_server, addr);
-		dns_setserver(0, &addr);
+		dns_setserver(0, (const ip_addr_t *)&addr);
 		
 		return 0;
 	}
@@ -565,6 +522,7 @@ uplus_s32 uplus_net_dns_config(uplus_u8 op, uplus_s8 *dns_server)
 
 		return 0;
 	}
+	return 0;
 }
 
 #define DNS_PARSING_WAIT_TIME_MAX	(30000/5)
@@ -592,7 +550,7 @@ static int gethostbyname(char *hostname, char *ip_addr)
 	uint16_t cnt = 0;
 
 	dns_parsing_falg = 0;
-	dns_gethostbyname(hostname, &addres, zk_found_callback, ip_addr);
+	dns_gethostbyname(hostname, (ip_addr_t *)&addres, zk_found_callback, ip_addr);
 
 	if(addres.s_addr != 0)
 	{
@@ -674,10 +632,9 @@ uplus_s32 uplus_net_dhcp_pool_set(uplus_u8 op, uplus_s8 *address_pool_start, upl
  */
 uplus_ctx_id uplus_net_ssl_client_create(uplus_s32 fd, struct uplus_ca_chain *root_ca, uplus_u8 root_ca_num)
 {
-	/*uplus_sys_log("[zk u+] net_ssl_client_create fd=%d", fd);
-	return net_ssl_client_create(fd, root_ca, root_ca_num);*/
+	uplus_sys_log("[zk u+] net_ssl_client_create fd=%d", fd);
 
-	return NULL;
+	return net_ssl_client_create(fd, root_ca, root_ca_num);
 }
 
 /*!
@@ -687,10 +644,9 @@ uplus_ctx_id uplus_net_ssl_client_create(uplus_s32 fd, struct uplus_ca_chain *ro
  */
 uplus_s32 uplus_net_ssl_client_handshake(uplus_ctx_id id)
 {
-	/*uplus_sys_log("[zk u+] net_ssl_client_handshake");
-	return net_ssl_client_handshake(id);*/
+	uplus_sys_log("[zk u+] net_ssl_client_handshake");
 
-	return 0;
+	return net_ssl_client_handshake(id);
 }
 
 /*!
@@ -701,13 +657,11 @@ uplus_s32 uplus_net_ssl_client_handshake(uplus_ctx_id id)
  */
 uplus_s32 uplus_net_ssl_client_close(uplus_ctx_id id)
 {
-	/*uplus_s32 result = net_ssl_client_close(id);
+	uplus_s32 result = net_ssl_client_close(id);
 
 	uplus_sys_log("[zk u+] net_ssl_client_close result=%d", result);
 	
-	return result;*/
-
-	return 0;
+	return result;
 }
 
 /*!
@@ -718,7 +672,7 @@ uplus_s32 uplus_net_ssl_client_close(uplus_ctx_id id)
 uplus_s32 uplus_net_ssl_pending(uplus_ctx_id id)
 {
 	//if(get_sye_state() != SYS_STATE_FOTA)
-	/*{
+	{
 		uplus_sys_log("[zk u+] net_ssl_pending start");
 		
 		uplus_s32 read_num = net_ssl_pending(id);
@@ -726,7 +680,7 @@ uplus_s32 uplus_net_ssl_pending(uplus_ctx_id id)
 		uplus_sys_log("[zk u+] net_ssl_pending end:num=%d", read_num);
 		
 		return read_num;
-	}*/
+	}
 	//else
 	//{
 		//uplus_sys_log("[zk u+] net_ssl_pending fota task run....");
@@ -745,7 +699,7 @@ uplus_s32 uplus_net_ssl_pending(uplus_ctx_id id)
 uplus_s32 uplus_net_ssl_read(uplus_ctx_id id, uplus_u8 *buf, uplus_size_t len)
 {
 	//if(get_sye_state() != SYS_STATE_FOTA)
-	/*{
+	{
 		uplus_sys_log("[zk u+] net_ssl_read_1 start:len=%d", len);
 		
 		uplus_s32 read_num = net_ssl_read(id, buf, len);
@@ -753,7 +707,7 @@ uplus_s32 uplus_net_ssl_read(uplus_ctx_id id, uplus_u8 *buf, uplus_size_t len)
 		uplus_sys_log("[zk u+] net_ssl_read_2 end:num=%d ", read_num);
 		
 		return read_num;
-	}*/
+	}
 	//else
 	//{
 		//uplus_sys_log("[zk u+] net_ssl_read fota task run....");
@@ -772,7 +726,7 @@ uplus_s32 uplus_net_ssl_read(uplus_ctx_id id, uplus_u8 *buf, uplus_size_t len)
 uplus_s32 uplus_net_ssl_write(uplus_ctx_id id, uplus_u8 *buf, uplus_size_t len)
 {
 	//if(get_sye_state() != SYS_STATE_FOTA)
-	/*{
+	{
 		uplus_sys_log("[zk u+] net_ssl_write start:len=%d", len);
 		
 		uplus_s32 write_num = net_ssl_write(id, buf, len);
@@ -780,7 +734,7 @@ uplus_s32 uplus_net_ssl_write(uplus_ctx_id id, uplus_u8 *buf, uplus_size_t len)
 		uplus_sys_log("[zk u+] net_ssl_write end:write_num=%d", write_num);
 		
 		return write_num;
-	}*/
+	}
 	//else
 	//{
 		//uplus_sys_log("[zk u+] net_ssl_write fota task run....");

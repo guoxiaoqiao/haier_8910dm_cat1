@@ -272,21 +272,29 @@ static void socket_api_test(void)
     // 建立TCP链接 
     tcp_server_addr.sin_family = AF_INET;  
     tcp_server_addr.sin_port = uplus_net_htons(port);  
-    inet_aton(ipaddr,&tcp_server_addr.sin_addr);
+    //inet_aton(ipaddr,&tcp_server_addr.sin_addr);
     tcp_server_addr.sin_addr.s_addr = uplus_net_inet_addr(ipaddr);
 
     //uplus_sys_log("[socket] tcp connect to addr %s", ipaddr);
-    /*struct uplus_sockaddr u_sockaddr = {0};
-    memcpy(&u_sockaddr, &tcp_server_addr, sizeof(struct uplus_sockaddr));
-    uplus_net_socket_connect(socketfd, &u_sockaddr, sizeof(struct uplus_sockaddr));*/
-    connErr = lwip_connect(socketfd, (const struct sockaddr *)&tcp_server_addr, sizeof(struct sockaddr));
-    uplus_sys_log("[socket] tcp connect connErr=%d", connErr);
+    //struct uplus_sockaddr u_sockaddr = {0};
+    //memcpy(&u_sockaddr, &tcp_server_addr, sizeof(struct uplus_sockaddr));
+    uplus_sys_log("[socket] sizeof:uplus=%d in=%d sock=%d", sizeof(struct uplus_sockaddr), sizeof(struct sockaddr_in), sizeof(struct sockaddr));
+    uplus_net_socket_connect(socketfd, (const struct uplus_sockaddr *)&tcp_server_addr, sizeof(struct uplus_sockaddr));
+    ///connErr = lwip_connect(socketfd, (const struct sockaddr *)&tcp_server_addr, sizeof(struct sockaddr));
+    //uplus_sys_log("[socket] tcp connect connErr=%d", connErr);
 
-    uplus_net_socket_close(socketfd);
+    //uplus_net_socket_close(socketfd);
     //uplus_sys_log("[socket] tcp close connErr=%d", connErr);
 
 
-	//uplus_net_ssl_client_create(socketfd, NULL, 0);
+	uplus_ctx_id ssl_ctx = uplus_net_ssl_client_create(socketfd, NULL, 0);
+
+    connErr = uplus_net_ssl_client_handshake(ssl_ctx);
+    uplus_sys_log("[socket] ssl handshake connErr=%d", connErr);
+
+    uplus_net_ssl_client_close(ssl_ctx);
+
+    uplus_net_socket_close(socketfd);
 		
 	/*FD_ZERO(&ReadSet);
     FD_SET(socketfd, &ReadSet);
@@ -343,10 +351,10 @@ void test2_task_main(void *pParameter)
 
 void uplus_sdk_test(void)
 {
-    static uint8_t tset1_param = 1;
+    //static uint8_t tset1_param = 1;
     static uint8_t tset2_param = 2;
 
     //uplus_os_task_create("task1", 256, 5, test1_task_main, (void *)&tset1_param, &test1_id);
 
-    uplus_os_task_create("task2", 512, 4, test2_task_main, (void *)&tset2_param, &test2_id);
+    uplus_os_task_create("task2", 1024, 4, test2_task_main, (void *)&tset2_param, &test2_id);
 }

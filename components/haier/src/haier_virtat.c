@@ -180,6 +180,31 @@ static void vat_CGDCONT_rsp_handle(char *rsp_buff, uint32_t len)
     }
 }
 
+static void vat_CGPADDR_rsp_handle(char *rsp_buff, uint32_t len)
+{
+    OSI_LOGXI(OSI_LOGPAR_IS, 0, "[zk vat] cgPADDR_rsp_(%d):%s", len, rsp_buff);
+
+    uint8_t cnt = 0;
+    char *p = strstr(rsp_buff, "\"");
+    if(p != NULL)
+    {
+        char *ip_p = ++p;
+        while(((*p) != '\"')&&((*p) != '\r')&&((*p) != '\n'))
+        {
+            //uplus_sys_log("[zk vat] get ipaddr:0x%x", (*p));
+            cnt++;
+            p++;
+        }
+        memcpy(appSysTem.Module_ipaddr, ip_p, cnt);
+        
+        uplus_sys_log("[zk vat] get ipaddr:%s", appSysTem.Module_ipaddr);
+    }
+    else
+    {
+        uplus_sys_log("[zk vat] get ipaddr:error");
+    }
+}
+
 static void vat_CGACT_rsp_handle(char *rsp_buff, uint32_t len)
 {
     OSI_LOGXI(OSI_LOGPAR_IS, 0, "[zk vat] cgact_rsp_(%d):%s", len, rsp_buff);
@@ -223,6 +248,7 @@ static vat_cmd_cb_s vat_cmd_table[] = {
     {"+CGREG: ", vat_CGREG_rsp_handle},
     {"+CSCON: ", vat_CSCON_rsp_handle},
     {"+CGDCONT: ", vat_CGDCONT_rsp_handle},
+    {"+CGPADDR: ", vat_CGPADDR_rsp_handle},
     {"+CGACT: ", vat_CGACT_rsp_handle},
     {"+CTZV: ", vat_CTZV_rsp_handle},
     {"+CGSN:", vat_CGSN_rsp_handle},
@@ -429,6 +455,12 @@ void network_task_main(void *pParameter)
                     //成功激活PDP承载通道后，获取IMSI,ICCID，为后续连接u+云做准备
                     vat_cmd_send("AT+CCID\r\n", strlen("AT+CCID\r\n"));
                     vat_cmd_send("AT+CIMI\r\n", strlen("AT+CIMI\r\n"));
+                    vat_cmd_send("AT+CGPADDR\r\n", strlen("AT+CGPADDR\r\n"));
+
+                    //PDP激活以后延时一段时间在启动优家SDK
+                    vTaskDelay(osiMsToOSTick(5000));
+
+                    zk_queue_msg_send(uplus_server_queue, UPLUS_SDK_INIT_MSG, NULL, 0, 0);
                     break;
                 default:
                     OSI_LOGE(0, "[zk net] network_task_main_7: not cmd %d", msg->id);

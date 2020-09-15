@@ -1,4 +1,5 @@
 #include "Haier_BottomPlate.h"
+#include "haier_uplus_server.h"
 
 static drvUart_t *air_drv;
 static air_uart_recv1 air_uart_recv;
@@ -11,6 +12,11 @@ static struct StateData1 Old_StateData;
 static struct StateData1 Curr_StateData;
 //模组网络侧状态(每次查询大数据时，会查询一次网络状态数据，收到底板大数据应答时，会携带网络状态数据一起上报给服务器)
 struct NET_STATS1 net_info;
+
+//泰国底板type id
+static uint8_t TypeId1[32] = {0x20,0x08,0x61,0x08,00,0x82,0x03,0x24,0x02,0x11,00,0x11,0x80,0x11,0x35,0x41,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,0x40};
+//印度底板type id
+uint8_t TypeId[32] = {0x20,0x08,0x61,0x08,00,0x82,0x03,0x24,0x02,0x12,00,0x11,0x80,0x11,0x35,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,0x40};
 
 void air_uart_write(uint8_t *buff, int32_t len)
 {
@@ -642,12 +648,18 @@ static void Haier_BottomProtocolResolution(uint8_t *RecvBuff, uint16_t RecvLen, 
 			//拷贝设备信息数据到结构体
 			memcpy(&DevicVersion, DataBuff+10, sizeof(struct DevicVersion1));
 
-			/*dev.type = DEVICE_TYPE_AC;
+			dev.type = DEVICE_TYPE_AC;
 			memcpy(dev.dev_name, DevicVersion.DeviceName, 8);
 			memcpy(dev.dev_id, TypeId, 32);
 			memcpy(dev.proto_ver, DevicVersion.DevicProtocolVersion+3, sizeof(DevicVersion.DevicProtocolVersion)-3);
 			memcpy(dev.sw_ver, DevicVersion.SoftVersion, 8);
-			memcpy(dev.hw_ver, DevicVersion.HardVersion, 8);*/
+			memcpy(dev.hw_ver, DevicVersion.HardVersion, 8);
+
+			memcpy(local.dev_name, DevicVersion.DeviceName, 8);
+			memcpy(local.proto_ver, DevicVersion.DevicProtocolVersion+3, sizeof(DevicVersion.DevicProtocolVersion)-3);
+			memcpy(local.sw_ver, DevicVersion.SoftVersion, 8);
+			memcpy(local.hw_ver, DevicVersion.HardVersion, 8);
+			write_local_cfg_Info();
 		
 			OSI_LOGI(0, "[zk air] Get Device Version OK");
 			break;

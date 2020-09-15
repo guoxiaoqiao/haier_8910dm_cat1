@@ -17,6 +17,7 @@ TaskHandle_t air_task_handle;
 TaskHandle_t vat_send_task_handle;
 TaskHandle_t vat_recv_task_handle;
 TaskHandle_t network_task_handle;
+TaskHandle_t uplus_server_handle;
 TaskHandle_t led_task_handle;
 //queue handle
 QueueHandle_t uart_recv_queue;
@@ -24,6 +25,7 @@ QueueHandle_t haier_app_queue;
 QueueHandle_t vat_send_queue;
 QueueHandle_t vat_recv_queue;
 QueueHandle_t network_queue;
+QueueHandle_t uplus_server_queue;
 //timer handle
 TimerHandle_t Haier_Timers;
 TimerHandle_t network_Timers;
@@ -40,8 +42,10 @@ void restart(uint8_t typ)
 			break;
 		case 2:
 			OSI_LOGI(0, "[zk net] restart_1: Inquire_BigData_FailCnt rest");
+			break;
 		case 3:
 			OSI_LOGI(0, "[zk net] restart_1: u+ sdk rest");
+			break;
 		default:
 			return;
 	}
@@ -271,6 +275,12 @@ static void haier_app_IPC_created(void)
 	{
 		OSI_LOGE(0, "[zk] network_queue Created Fail");
 	}
+	//用于优家服务器数据上下行处理
+    uplus_server_queue = xQueueCreate(5, sizeof(TASK_MSG *));
+	if(uplus_server_queue == NULL)
+	{
+		OSI_LOGE(0, "[zk] uplus_server_queue Created Fail");
+	}
 }
 
 static void app_soft_timer_created(void)
@@ -319,11 +329,17 @@ void app_task_created(void)
     }
     //搜网任务：负责控制模组网络联网和丢网的事件处理
     extern void network_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 512, NULL, OSI_PRIORITY_NORMAL+3, &vat_recv_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 512, NULL, OSI_PRIORITY_NORMAL+3, &network_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] network_task Created Fail");
     }
-	//
+	//网络侧数据上下行任务：负责直接和uplus SDK交互，数据上下行都由此任务负责
+	extern void uplus_server_task_main(void *pParameter);
+    if(xTaskCreate((TaskFunction_t)uplus_server_task_main, "uplus_server_task", 512, NULL, OSI_PRIORITY_NORMAL+2, &uplus_server_handle) != pdPASS)
+    {
+        OSI_LOGE(0, "[zk] uplus_server_task Created Fail");
+    }
+	//LED控制任务：根据系统当前状态表现出各种不同的闪灯形式
 	extern void led_task_main(void *pParameter);
 	if(xTaskCreate((TaskFunction_t)led_task_main, "led_task", 256, NULL, OSI_PRIORITY_NORMAL, &led_task_handle) != pdPASS)
     {
@@ -346,6 +362,6 @@ void haier_appimg_enter(void)
 {
     haier_resource_created();
 
-	extern void uplus_sdk_test(void);
-	uplus_sdk_test();
+	//extern void uplus_sdk_test(void);
+	//uplus_sdk_test();
 }

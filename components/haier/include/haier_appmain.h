@@ -132,6 +132,11 @@ typedef struct {
 	uint8_t fota_flag;
 	//模组复位次数
 	uint32_t rest_num;
+
+	uint8_t dev_name[8];
+	uint8_t proto_ver[5];
+	uint8_t sw_ver[8];
+    uint8_t hw_ver[8];
 	
 }LOCAL_CFG;
 
@@ -144,6 +149,7 @@ extern TaskHandle_t air_task_handle;
 extern TaskHandle_t vat_send_task_handle;
 extern TaskHandle_t vat_recv_task_handle;
 extern TaskHandle_t network_task_handle;
+extern TaskHandle_t uplus_server_handle;
 extern TaskHandle_t led_task_handle;
 //queue handle
 extern QueueHandle_t uart_recv_queue;
@@ -151,6 +157,7 @@ extern QueueHandle_t haier_app_queue;
 extern QueueHandle_t vat_send_queue;
 extern QueueHandle_t vat_recv_queue;
 extern QueueHandle_t network_queue;
+extern QueueHandle_t uplus_server_queue;
 //timer handle
 extern TimerHandle_t Haier_Timers;
 extern TimerHandle_t network_Timers;
