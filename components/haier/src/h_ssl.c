@@ -21,7 +21,7 @@ static int32_t SSL_SocketTx(int32_t Socketfd, const unsigned char *Buf, size_t T
 	}
     FD_ZERO(&WriteSet);
     FD_SET(Socketfd, &WriteSet);
-    tm.tv_sec = 75;
+    tm.tv_sec = 10;
     tm.tv_usec = 0;
     ret = select(Socketfd + 1, NULL, &WriteSet, NULL, &tm);
     if(ret > 0)

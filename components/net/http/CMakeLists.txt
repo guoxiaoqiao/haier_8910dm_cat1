@@ -19,6 +19,7 @@ set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${out_lib_di
 target_compile_definitions(${target} PRIVATE OSI_LOG_TAG=LOG_TAG_NET)
 target_include_directories(${target} PUBLIC include)
 target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(${target} PRIVATE ../../haier/include)
 target_include_targets(${target} PUBLIC mupnp)
 target_include_targets(${target} PRIVATE kernel driver calclib net lwip cfw atr ats fs json mbedtls)
 

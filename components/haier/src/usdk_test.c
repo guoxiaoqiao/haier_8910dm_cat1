@@ -1,7 +1,12 @@
 #include "pal_common.h"
 #include "dns.h"
+#include "http_api.h"
+#include "http_download.h"
+#include "fupdate.h"
+#include "vfs.h"
 
 void uplus_sdk_test(void);
+void zk_fota_data_cpy(uint8_t *data, uint32_t len);
 
 uplus_mutex_id Mux_id;
 uplus_sem_id sem_id;
@@ -328,6 +333,252 @@ static void socket_api_test(void)
     }*/
 }
 
+static char app_version[] = "V1.0.1_0921B";
+uint8_t fata_flag;
+static char content_type[] = "application/json";
+static char body_content[] = "{\"productName\":\"AIR_SE-A_CT1\",\"currentVersion\":\"2.2.3\",\"extraInfo\":{}}";
+static char url[] = "http://os.uhome.haier.net/osfota/app/package/v3";
+
+void zk_fota_data_cpy(uint8_t *data, uint32_t len)
+{
+    if((data == NULL) || (len == 0))
+    {
+        OSI_LOGI(0, "[zk fota] fota_data_cpy_0: param fail %d", len);
+        return;
+    }
+    OSI_LOGI(0, "[zk fota] zk_fota_data_cpy_1: len=%d", len);
+    /*if(len > 100)
+        zk_debug(data, 100);
+    else
+        zk_debug(data, (uint16_t)len);*/
+    
+    fupdateInvalidate(true);
+    vfs_mkdir(CONFIG_FS_FOTA_DATA_DIR, 0);
+    int wsize = vfs_file_write(FUPDATE_PACK_FILE_NAME, data, len);
+    if (wsize != len)
+    {
+        OSI_LOGE(0, "[zk] Fota Error : write file fail, errno %d", wsize);
+    }
+
+    // To check current version, pass the current version string
+    // as parameter.
+    if (!fupdateSetReady(NULL))
+    {
+        OSI_LOGE(0, "[zk] Fota Error: not ready");
+    }
+    else
+    {
+        OSI_LOGE(0, "[zk] Fota download ok");
+        fata_flag = 1;
+       // osiShutdown(OSI_SHUTDOWN_RESET);
+    }
+}
+
+extern uint8_t* zk_http_response_print(mUpnpHttpPacket *httpPkt, uint32_t *buff_len);
+static void http_api_test(void)
+{
+    while((get_sye_state() != SYS_STATE_REG))
+    {
+        uplus_os_task_sleep(2000);
+    }
+    uplus_os_task_sleep(2000);
+
+    OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk http] http_api_test version:%s", app_version);
+    Http_info *zk_http_ctx = RD_Http_Init();
+    if(zk_http_ctx == NULL)
+    {
+        OSI_LOGI(0, "[zk http] http ctx malloc fail");
+        return;
+    }
+
+    OSI_LOGI(0, "[zk http] http ctx init suc");
+
+    zk_http_ctx->cg_http_api->nCID = 1;
+    strncpy(zk_http_ctx->url, url, strlen(url));
+    strncpy(zk_http_ctx->content_type, content_type, strlen(content_type));
+    strncpy(zk_http_ctx->body_content, body_content, strlen(body_content));
+    zk_http_ctx->contentLen = strlen(body_content);
+
+    mUpnpHttpResponse *response = NULL;
+    char *f_url = NULL;
+    char *md5 = NULL;
+
+    if ((response = Http_post(zk_http_ctx)) == NULL)
+    {
+        OSI_LOGI(0, "[zk http] http post fail");
+    }
+    else
+    {
+        OSI_LOGI(0, "[zk http] http post suc");
+
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "%s", response->content->value);
+
+        char *value = response->content->value;
+
+        char *p = strstr(value, "\"resultCode\":");
+        if(p !=NULL)
+        {
+            char code = *(p+strlen("\"resultCode\":")) -'0';
+            if(code == 0)
+            {
+                OSI_LOGI(0, "[zk http] get a new upgrade pack ok");
+                p = NULL;
+                p = strstr(value, "\"url\":\"");
+                if(p != NULL)
+                {
+                    uint16_t cnt = 0;
+                    p += strlen("\"url\":\"");
+                    char *f_p = p;
+                    while(((*p) != '\"')&&((*p) != '\r')&&((*p) != '\n')&&((*p) != 0))
+                    {
+                        cnt++;
+                        p++;
+                    }
+                    f_url = calloc(1, cnt+1);
+                    if(f_url != NULL)
+                    {
+                        memcpy(f_url, f_p, cnt);
+                        OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk http] get f_url:%s", f_url);
+                    }
+                }
+
+                //md5值获取(这里获取完之后，需要保存，后面要对下载的包进行MD5计算，与这里保存的值进行比较，以此来判断包是否正确下载)
+                p = NULL;
+                p = strstr(value, "\"md5\":\"");
+                if(p != NULL)
+                {
+                    uint16_t cnt = 0;
+                    p += strlen("\"md5\":\"");
+                    char *md5_p = p;
+                    while(((*p) != '\"')&&((*p) != '\r')&&((*p) != '\n')&&((*p) != 0))
+                    {
+                        cnt++;
+                        p++;
+                    }
+                    md5 = calloc(1, cnt+1);
+                    if(md5 != NULL)
+                    {
+                        memcpy(md5, md5_p, cnt);
+                        OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk http] get md5:%s", md5);
+                    }
+                }
+
+            }
+        }
+        
+        //http_response_print((mUpnpHttpPacket *)response);
+
+        mupnp_http_response_clear(response);
+
+        mupnp_http_response_delete(response);
+    }
+
+    if(RDHttpTerm(zk_http_ctx) == true)
+    {
+        OSI_LOGI(0, "[zk http] http free suc");
+        zk_http_ctx = NULL;
+    }
+
+    if(f_url != NULL)
+    {
+        zk_http_ctx = NULL;
+        zk_http_ctx = RD_Http_Init();
+        if(zk_http_ctx == NULL)
+        {
+            OSI_LOGI(0, "[zk http] http ctx malloc fail 1");
+            free(f_url);
+            return;
+        }
+
+        OSI_LOGI(0, "[zk http] http ctx init suc 1");
+
+        zk_http_ctx->cg_http_api->nCID = 1;
+        strncpy(zk_http_ctx->url, f_url, strlen(f_url));
+
+        mUpnpHttpResponse *response1 = NULL;
+        if ((response1 = Http_get(zk_http_ctx)) == NULL)
+        {
+            OSI_LOGE(0, "[zk http] http GET error");
+        }
+        else
+        {
+            //uplus_os_task_delete(2000);
+            //http_response_print((mUpnpHttpPacket *)response1);
+
+           uint32_t contentLen = 0;
+           uint8_t *content = zk_http_response_print((mUpnpHttpPacket *)response1, &contentLen);
+           OSI_LOGI(0, "[zk http] http GET ok len=%d", contentLen);
+           //zk_debug((uint8_t *)(content+90), (uint32_t)(contentLen - 90));
+
+           uint8_t *content1 = (uint8_t *)response1->content->value;
+           uint32_t contentLen1 = (uint32_t)response1->content->valueSize;
+
+           OSI_LOGI(0, "[zk http] http GET ok len_1=%d", contentLen1);
+
+           ZK_MD5_CTX http_context={0};
+           MD5Init(&http_context);
+
+           MD5Update(&http_context, content, contentLen);
+
+           uint8_t out_data[16] = {0};
+           MD5Final(&http_context, out_data);
+
+           zk_debug(out_data, 16);
+           
+           char md51[33] = {0};
+           uint8_t i=0,cnt=0;
+           for(; i<16; i++)
+           {
+                cnt += snprintf(md51+cnt, 33-cnt, "%02x", out_data[i]);
+           }
+           OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk http] http md51->%s", md51);
+           if(strncmp(md5, md51, 32) == 0)
+           {
+               OSI_LOGI(0, "[zk http] http md5 cmp ok");
+
+               zk_fota_data_cpy(content, contentLen);
+           }
+
+           /* char *content = response1->content->value;
+            uint32_t contentLen = response1->content->valueSize;
+            //memset(zk_http_ctx->body_content, 0, 255);
+           // memcpy(zk_http_ctx->body_content, content, 255);
+            //uint32_t contentLen = mupnp_http_packet_getcontentlength(response1);
+
+            OSI_LOGI(0, "[zk http] http GET ok len=%d", contentLen);
+
+            if (content != NULL && 0 < contentLen)
+            {
+                //zk_fota_data_cpy((uint8_t *)content, (long)contentLen);
+                zk_debug(content, 100);
+            }*/
+
+            //mupnp_http_response_clear(response1);
+
+            //mupnp_http_response_delete(response1);
+        }
+
+        /*if(Http_downLoad(zk_http_ctx) == true)
+        {
+            OSI_LOGI(0, "[zk http] http get new pack suc:%d", zk_http_ctx->contentLen);
+        }
+        else
+        {
+            OSI_LOGI(0, "[zk http] http get new pack fail");
+        }*/
+        free(f_url);
+        if(RDHttpTerm(zk_http_ctx) == true)
+        {
+            OSI_LOGI(0, "[zk http] http free suc 1");
+            zk_http_ctx = NULL;
+        }
+        if(fata_flag)
+        {
+            osiShutdown(OSI_SHUTDOWN_RESET);
+        }
+    }
+}
+
 void test2_task_main(void *pParameter)
 {
     uint8_t parm = *(uint8_t *)pParameter;
@@ -340,9 +591,13 @@ void test2_task_main(void *pParameter)
 
         //pal_sys_api_test();
 
-        pal_net_api_test();
+        //pal_net_api_test();
 
-        socket_api_test();
+        //socket_api_test();
+
+        http_api_test();
+
+        //osiShutdown(OSI_SHUTDOWN_RESET);
 
         OSI_LOGI(0, "[zk test2] test2_task end");
         uplus_os_task_delete(NULL);
@@ -356,5 +611,5 @@ void uplus_sdk_test(void)
 
     //uplus_os_task_create("task1", 256, 5, test1_task_main, (void *)&tset1_param, &test1_id);
 
-    uplus_os_task_create("task2", 1024, 4, test2_task_main, (void *)&tset2_param, &test2_id);
+    uplus_os_task_create("task2", 2048, 4, test2_task_main, (void *)&tset2_param, &test2_id);
 }

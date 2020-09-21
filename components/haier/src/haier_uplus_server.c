@@ -93,17 +93,30 @@ static void uplus_config_init(void)
 }
 
 #define EPP_HEAD_LEN	46
-#define EPP_DATA_LEN_MAX 300
+#define EPP_DATA_LEN_MAX (300 +EPP_HEAD_LEN)
 //当服务器侧有数据下来时,此callback会被调用，从pkt_buf中把数据取出透传给底板
 uplus_s32 recv_server_data_callback(void *dev_handle, void *param, pkt_buf_t *pkt_buf)
 {
 	/**** 把数据拿出来透传给底板 ****/
 
 	if((dev_handle == NULL) || (pkt_buf == NULL))
-		return -1;
+    {
+        //return -1;
+        goto exit;
+    }
 
-	//这两个属性需要保存起来，后面应答时需要
-	memset(&session, 0, sizeof(session_desc_t));
+    uplus_sys_log("[zk u+] recv_server_data_callback_0 len=%d =0x%x", pkt_buf->data_info.data.raw_data.data_len, pkt_buf->data_info.data.raw_data.data_len);
+	/*if(pkt_buf->data_info.data.raw_data.data != NULL)
+    {
+        zk_debug(pkt_buf->data_info.data.raw_data.data+EPP_HEAD_LEN, 15);
+    }
+    else
+    {
+        uplus_sys_log("[zk u+] recv_server_data_callback_9 data is null");
+    }*/
+    
+    //这两个属性需要保存起来，后面应答时需要
+	/*memset(&session, 0, sizeof(session_desc_t));
 	sn = 0;
 	memcpy(&session, &pkt_buf->info_res.session_desc, sizeof(session_desc_t));
 
@@ -117,36 +130,44 @@ uplus_s32 recv_server_data_callback(void *dev_handle, void *param, pkt_buf_t *pk
 		uint8_t *data_buff = pkt_buf->data_info.data.raw_data.data+EPP_HEAD_LEN;
         if(data_buff == NULL)
         {
-            return -1;
+            //return -1;
+            uplus_sys_log("[zk u+] recv_server_data_callback_1 pkt_buf->data_info.free");
+            goto exit;
         }
 
-		uplus_sys_log("[zk u+] recv_server_data_callback_0 len=%d", len);
+		uplus_sys_log("[zk u+] recv_server_data_callback_2 len=%d", len);
         zk_queue_msg_send(uplus_server_queue, UPLUS_SDK_RECV_MSG, data_buff, len-EPP_HEAD_LEN, 0);
 	}
     else
     {
-        uplus_sys_log("[zk u+] recv_server_data_callback_1 datalen error len=%d len=0x%x", len, len);
-    }  
+        uplus_sys_log("[zk u+] recv_server_data_callback_3 datalen error len=%d len=0x%x", len, len);
+        //return -1;
+        goto exit;
+    }  */
 
+exit:
     if(pkt_buf->data_info.free != NULL)
     {
-	    pkt_buf->data_info.free(&pkt_buf->data_info);
+        uplus_sys_log("[zk u+] recv_server_data_callback_4");
+	    //pkt_buf->data_info.free(&pkt_buf->data_info);
     }
     else
     {
-        uplus_sys_log("[zk u+] recv_server_data_callback_2 pkt_buf->data_info.free is NULL");
+        uplus_sys_log("[zk u+] recv_server_data_callback_5 pkt_buf->data_info.free is NULL");
         return -1;
     }
     
     if(pkt_buf->free != NULL)
     {
-	    pkt_buf->free(pkt_buf);
+        uplus_sys_log("[zk u+] recv_server_data_callback_6 pkt_buf->free");
+	    //pkt_buf->free(pkt_buf);
     }
     else
     {
-        uplus_sys_log("[zk u+] recv_server_data_callback_3 pkt_buf->free is NULL");
+        uplus_sys_log("[zk u+] recv_server_data_callback_7 pkt_buf->free is NULL");
         return -1;
     }
+    uplus_sys_log("[zk u+] recv_server_data_callback_8 recv_callback end");
     return 0;
 }
 

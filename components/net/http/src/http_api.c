@@ -34,6 +34,7 @@
 //#include "at_utils.h"
 #include "vfs.h"
 #include "osi_log.h"
+
 bool gContentTypeFlag = false;
 bool gApiKeyFlag = false;
 char *vnetregdata = NULL;
@@ -3404,9 +3405,51 @@ void http_response_print(mUpnpHttpPacket *httpPkt)
 
     if (content != NULL && 0 < contentLen)
     {
-
         Http_WriteUart(content, contentLen);
     }
+}
+
+extern void zk_debug(uint8_t *buff, uint32_t len);
+uint8_t* zk_http_response_print(mUpnpHttpPacket *httpPkt, uint32_t *buff_len)
+{
+    mUpnpHttpHeader *header;
+    char *content;
+    long contentLen;
+    char *headerName;
+    char *headerValue;
+
+    /**** print headers ****/
+    for (header = mupnp_http_packet_getheaders(httpPkt); header != NULL; header = mupnp_http_header_next(header))
+    {
+        headerName = (char *)mupnp_http_header_getname(header);
+        headerValue = (char *)mupnp_http_header_getvalue(header);
+
+        OSI_LOGXI(OSI_LOGPAR_SS, 0, "[zk http] get name=%s->%s", headerName, headerValue);
+    }
+
+    /**** print content ****/
+    content = mupnp_http_packet_getcontent(httpPkt);
+    contentLen = mupnp_http_packet_getcontentlength(httpPkt);
+
+    /*uint32_t tmp_len = 0;
+    if (content != NULL && 0 < contentLen)
+    {
+        if(contentLen < buff_len)
+            tmp_len = (uint32_t)contentLen;
+        else
+            tmp_len = buff_len;
+        
+        if((content_buff != NULL) && (buff_len != 0))
+        {
+            memcpy(content_buff, content, tmp_len);
+
+            zk_debug(content_buff, tmp_len);
+        }
+        OSI_LOGI(0, "[zk http] http GET ok buff_len=%d,contentLen=%d,tmp_len=%d", buff_len, (uint32_t)contentLen, tmp_len);
+        //zk_debug((uint8_t *)content+90, (uint32_t)contentLen - 90);
+    }*/
+    *buff_len = (uint32_t)contentLen;
+    return (uint8_t *)content;
 }
 
 #endif

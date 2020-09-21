@@ -2,7 +2,7 @@
 
 void restart(uint8_t typ);
 void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
-void zk_debug(uint8_t *buff, uint16_t len);
+void zk_debug(uint8_t *buff, uint32_t len);
 int os_get_random(unsigned char *buf, size_t len);
 
 void set_net_state(uint8_t net_state);
@@ -10,6 +10,8 @@ uint8_t get_net_state(void);
 
 void set_sys_state(SYS_STATE sysStata);
 SYS_STATE get_sye_state(void);
+
+void write_local_cfg_Info(void);
 
 //task handle
 TaskHandle_t air_recv_task_handle;
@@ -19,6 +21,7 @@ TaskHandle_t vat_recv_task_handle;
 TaskHandle_t network_task_handle;
 TaskHandle_t uplus_server_handle;
 TaskHandle_t led_task_handle;
+TaskHandle_t fota_task_handle;
 //queue handle
 QueueHandle_t uart_recv_queue;
 QueueHandle_t haier_app_queue;
@@ -26,6 +29,7 @@ QueueHandle_t vat_send_queue;
 QueueHandle_t vat_recv_queue;
 QueueHandle_t network_queue;
 QueueHandle_t uplus_server_queue;
+QueueHandle_t fota_event_queue;
 //timer handle
 TimerHandle_t Haier_Timers;
 TimerHandle_t network_Timers;
@@ -38,18 +42,32 @@ void restart(uint8_t typ)
 	switch (typ)
 	{
 		case 1:
-			OSI_LOGI(0, "[zk net] restart_0: network timeout rest");
+			OSI_LOGI(0, "[zk] restart_0: network timeout reset");
 			break;
 		case 2:
-			OSI_LOGI(0, "[zk net] restart_1: Inquire_BigData_FailCnt rest");
+			OSI_LOGI(0, "[zk] restart_1: Inquire_BigData_FailCnt reset");
 			break;
 		case 3:
-			OSI_LOGI(0, "[zk net] restart_1: u+ sdk rest");
+			OSI_LOGI(0, "[zk] restart_2: u+ sdk reset");
+			break;
+		case 4:
+			OSI_LOGI(0, "[zk] restart_3: u+ sdk DNS parsing error");
+			osiShutdown(OSI_SHUTDOWN_RESET);
+		case 5:
+			OSI_LOGI(0, "[zk] restart_4: u+ sdk net work disconnect");
+			osiShutdown(OSI_SHUTDOWN_RESET);
+		case 6:
+			OSI_LOGI(0, "[zk] restart_5: fota reset");
+			osiShutdown(OSI_SHUTDOWN_RESET);
+		case 7:
+			OSI_LOGI(0, "[zk] restart_6: fota download fail");
+			osiShutdown(OSI_SHUTDOWN_RESET);
 			break;
 		default:
 			return;
 	}
 	//vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
+	//osiShutdown(OSI_SHUTDOWN_RESET);
 }
 
 void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout)
@@ -109,13 +127,28 @@ int os_get_random(unsigned char *buf, size_t len)
 }
 
 
-void zk_debug(uint8_t *buff, uint16_t len)
+void zk_debug(uint8_t *buff, uint32_t len)
 {
+	if(buff == NULL)
+	{
+		OSI_LOGE(0, "zk_debug buff is null");
+		return;
+	}
 	OSI_LOGI(0, "*****************************start******************************");
 
-	uint16_t i,j,m;
-	j = len % 10;
+	uint32_t i,j,m;
+	j = (uint32_t)(len % 10);
 	uint8_t *p = buff;
+
+	OSI_LOGE(0, "zk_debug len=%d j=%d", len, j);
+
+	/*uint8_t *p = calloc(1, len);
+	if(p == NULL)
+	{
+		OSI_LOGE(0, "zk_debug malloc fail");
+		return;
+	}
+	memcpy(p, buff, len);*/
 
 	for(i=0; i < (len - j); i+=10)
 	{
@@ -126,6 +159,7 @@ void zk_debug(uint8_t *buff, uint16_t len)
 	{
 		OSI_LOGI(0, "%02X", p[len - j + m]);
 	}
+	//free(p);
 	OSI_LOGI(0, "*****************************end******************************");
 }
 
@@ -238,7 +272,22 @@ static void local_cfg_init(void)
 
 	local.rest_num++;
 
+	if(local.fota_flag == 1)
+	{
+		if(local.fota_fail_ret_num < FOTA_FAIL_RETRIES_NUM)
+		{
+			set_sys_state(SYS_STATE_FOTA);
+			local.fota_fail_ret_num++;
+		}
+		else
+		{
+			local.fota_flag = 0;
+			local.fota_fail_ret_num = 0;
+		}
+	}
 	OSI_LOGI(0, "[zk local] fota_flag=%d rest_num=%d", local.fota_flag, local.rest_num);
+
+	OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk local] app_version->%s", APP_VERSION);
 
 	write_local_cfg_Info();
 }
@@ -281,16 +330,28 @@ static void haier_app_IPC_created(void)
 	{
 		OSI_LOGE(0, "[zk] uplus_server_queue Created Fail");
 	}
+	//用于FOTA事件通知
+	if(local.fota_flag)
+	{	
+		fota_event_queue = xQueueCreate(3, sizeof(TASK_MSG *));
+		if(fota_event_queue == NULL)
+		{
+			OSI_LOGE(0, "[zk] fota_event_queue Created Fail");
+		}
+	}
 }
 
 static void app_soft_timer_created(void)
 {
-	//用于定时获取空调底板状态
-    extern void Haier_SoftTimerCallback(void *argument);
-	Haier_Timers = xTimerCreate("Haier_Timer", pdMS_TO_TICKS(5000), pdFALSE, NULL, Haier_SoftTimerCallback);
-	if(Haier_Timers == NULL)
+	if(local.fota_flag == 0)
 	{
-		OSI_LOGE(0, "[zk] Haier_Timers Created Fail");
+		//用于定时获取空调底板状态
+		extern void Haier_SoftTimerCallback(void *argument);
+		Haier_Timers = xTimerCreate("Haier_Timer", pdMS_TO_TICKS(5000), pdFALSE, NULL, Haier_SoftTimerCallback);
+		if(Haier_Timers == NULL)
+		{
+			OSI_LOGE(0, "[zk] Haier_Timers Created Fail");
+		}
 	}
     //用于控制搜网时间
     extern void net_timer_callback(void *argument);
@@ -305,7 +366,7 @@ void app_task_created(void)
 {
 	extern void air_task_main(void *pParameter);
 	//海尔空调控制主任务 ：定时获取空调底板状态,转发服务器下发的控制数据给底板
-	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 512, NULL, OSI_PRIORITY_NORMAL+2, &air_task_handle) != pdPASS)
+	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 1024, NULL, OSI_PRIORITY_NORMAL+2, &air_task_handle) != pdPASS)
 	{
 		OSI_LOGE(0, "[zk] air_task_main Created Fail");
 	}
@@ -315,9 +376,46 @@ void app_task_created(void)
     {
         OSI_LOGE(0, "[zk] air_recv_task Created Fail");
     }
-    //虚拟AT发送任务：为保证虚拟AT通道的互斥性，创建一个保护任务，所有向虚拟AT通道发送的数据都由此任务来进行，最大程度保证资源的原子性
+	//网络侧数据上下行任务：负责直接和uplus SDK交互，数据上下行都由此任务负责
+	extern void uplus_server_task_main(void *pParameter);
+    if(xTaskCreate((TaskFunction_t)uplus_server_task_main, "uplus_server_task", 1024, NULL, OSI_PRIORITY_NORMAL+2, &uplus_server_handle) != pdPASS)
+    {
+        OSI_LOGE(0, "[zk] uplus_server_task Created Fail");
+    }
+}
+
+static void haier_resource_created(void)
+{
+	local_cfg_init();
+
+	haier_app_IPC_created();
+
+	app_soft_timer_created();
+
+	if(local.fota_flag == 0)
+	{
+		app_task_created();
+	}
+	else
+	{
+		//fota控制任务：主要负责fota过程的下载阶段，下载完成后会将数据保存到文件系统，然后复位，升级过程在boot中执行
+		extern void ota_task(void *pParameter);
+		if(xTaskCreate((TaskFunction_t)ota_task, "fota_task", 2048, NULL, OSI_PRIORITY_NORMAL+4, &fota_task_handle) != pdPASS)
+		{
+			OSI_LOGE(0, "[zk] fota_task Created Fail");
+		}
+	}
+	
+	//搜网任务：负责控制模组网络联网和丢网的事件处理
+    extern void network_task_main(void *pParameter);
+    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 1024, NULL, OSI_PRIORITY_NORMAL+3, &network_task_handle) != pdPASS)
+    {
+        OSI_LOGE(0, "[zk] network_task Created Fail");
+    }
+
+	//虚拟AT发送任务：为保证虚拟AT通道的互斥性，创建一个保护任务，所有向虚拟AT通道发送的数据都由此任务来进行，最大程度保证资源的原子性
     extern void vat_send_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)vat_send_task_main, "vat_send_task", 512, NULL, OSI_PRIORITY_NORMAL+1, &vat_send_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)vat_send_task_main, "vat_send_task", 1024, NULL, OSI_PRIORITY_NORMAL+1, &vat_send_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] vat_send_task Created Fail");
     }
@@ -327,35 +425,13 @@ void app_task_created(void)
     {
         OSI_LOGE(0, "[zk] vat_recv_task Created Fail");
     }
-    //搜网任务：负责控制模组网络联网和丢网的事件处理
-    extern void network_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 512, NULL, OSI_PRIORITY_NORMAL+3, &network_task_handle) != pdPASS)
-    {
-        OSI_LOGE(0, "[zk] network_task Created Fail");
-    }
-	//网络侧数据上下行任务：负责直接和uplus SDK交互，数据上下行都由此任务负责
-	extern void uplus_server_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)uplus_server_task_main, "uplus_server_task", 512, NULL, OSI_PRIORITY_NORMAL+2, &uplus_server_handle) != pdPASS)
-    {
-        OSI_LOGE(0, "[zk] uplus_server_task Created Fail");
-    }
+
 	//LED控制任务：根据系统当前状态表现出各种不同的闪灯形式
 	extern void led_task_main(void *pParameter);
 	if(xTaskCreate((TaskFunction_t)led_task_main, "led_task", 256, NULL, OSI_PRIORITY_NORMAL, &led_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] led_task Created Fail");
     }
-}
-
-static void haier_resource_created(void)
-{
-	local_cfg_init();
-
-    haier_app_IPC_created();
-
-	app_soft_timer_created();
-		
-	app_task_created();
 }
 
 void haier_appimg_enter(void)

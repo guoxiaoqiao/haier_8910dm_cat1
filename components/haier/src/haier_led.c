@@ -32,12 +32,35 @@ static void led_init(void)
         blue_led = drv_led_ststus;
         OSI_LOGI(0, "[zk led] led_init_2 blud led init suc");
     }
-    //上电3个灯常亮2s，然后常灭。（用于工厂工人查看灯是否良好）
-    set_sys_state(SYS_STATE_POWN);
-	vTaskDelay(osiMsToOSTick(2000)); 
-	LED_MODE_OFF;
-	LED_STATUS_OFF;
-    LED_STATUS_OFF;
+	if(get_sye_state() != SYS_STATE_FOTA)
+	{
+		//上电3个灯常亮2s，然后常灭。（用于工厂工人查看灯是否良好）
+		set_sys_state(SYS_STATE_POWN);
+		vTaskDelay(osiMsToOSTick(2000)); 
+		LED_MODE_OFF;
+		LED_STATUS_OFF;
+		LED_STATUS_OFF;
+	}
+	OSI_LOGI(0, "[zk led] led_init_3 finish");
+}
+
+void led_fota_change(uint8_t typ)
+{
+	if(get_sye_state() == SYS_STATE_FOTA)
+	{
+		switch(typ)
+		{
+			case LED_FOTA_START:
+				LED_NET_STATUS_ON;
+				break;
+			case LED_FOTA_STOP:
+				LED_NET_STATUS_OFF;
+				break;
+			default:
+				OSI_LOGI(0, "[zk led] led_fota_change:typ error %d", typ);
+				break;
+		}
+	}
 }
 
 //static uint8_t LEDState_ChangeFlag;
@@ -59,7 +82,7 @@ void LEDState_Change(uint8_t FlashCnt, uint16_t time)
 
 static void led_task_main_handle(void)
 {
-	switch((uint32_t)get_sye_state())
+	switch(get_sye_state())
 	{
 		case SYS_STATE_POWN:
 			set_sys_state(SYS_STATE_NETWORK_CONNECT);
@@ -86,12 +109,14 @@ static void led_task_main_handle(void)
 			vTaskDelay(osiMsToOSTick(1000)); 
 			break;
 		case SYS_STATE_FOTA:
+			OSI_LOGI(0, "[zk led] led_task_main_3 sys fota...");
 			LED_STATUS_ON;
 			LED_MODE_OFF;
 			vTaskDelay(osiMsToOSTick(500)); 
 			LED_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(500)); 
-			OSI_LOGI(0, "[zk led] led_task_main_3 sys fota...");
+
+			//vTaskDelay(osiMsToOSTick(5*60*1000));
 			break;
 		default:
 			OSI_LOGE(0, "[zk led] led_task_main_4 sys status error");

@@ -15,5 +15,6 @@ typedef struct
 
 extern uint8_t get_vat_init_status(void);
 extern void set_vat_init_status(uint8_t status);
+extern void vat_cmd_send(char *cmdbuf, uint32_t len);
 
 #endif

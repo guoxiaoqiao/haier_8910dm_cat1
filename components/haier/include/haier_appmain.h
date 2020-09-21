@@ -24,6 +24,9 @@
 #include "stdio.h"
 
 #include "haier_wtd.h"
+#include "haier_virtat.h"
+
+#define APP_VERSION 		"2.2.3"
 
 #define HAIER_FILE_NAME     "/Haier_Local.cfg"
 
@@ -33,7 +36,12 @@
 #define IMSI_LEN			15
 #define ICCID_LEN			20
 
+#define LED_FOTA_START		1
+#define LED_FOTA_STOP		0
+
 #define SEARCH_NET_MAX_TIME	(5*60*1000)
+
+#define FOTA_FAIL_RETRIES_NUM		2
 
 typedef enum
 {
@@ -137,6 +145,9 @@ typedef struct {
 	uint8_t proto_ver[5];
 	uint8_t sw_ver[8];
     uint8_t hw_ver[8];
+
+	uint8_t fota_fail_ret_num;
+	//uint8_t fw_pack_md5[33];
 	
 }LOCAL_CFG;
 
@@ -151,6 +162,7 @@ extern TaskHandle_t vat_recv_task_handle;
 extern TaskHandle_t network_task_handle;
 extern TaskHandle_t uplus_server_handle;
 extern TaskHandle_t led_task_handle;
+extern TaskHandle_t fota_task_handle;
 //queue handle
 extern QueueHandle_t uart_recv_queue;
 extern QueueHandle_t haier_app_queue;
@@ -158,6 +170,7 @@ extern QueueHandle_t vat_send_queue;
 extern QueueHandle_t vat_recv_queue;
 extern QueueHandle_t network_queue;
 extern QueueHandle_t uplus_server_queue;
+extern QueueHandle_t fota_event_queue;
 //timer handle
 extern TimerHandle_t Haier_Timers;
 extern TimerHandle_t network_Timers;
@@ -166,7 +179,7 @@ extern uint32_t osiMsToOSTick(uint32_t ms);
 
 extern void restart(uint8_t typ);
 extern void zk_queue_msg_send(void *qhandle, TASK_MSG_ID id, void *param, uint16_t len, uint32_t timeout);
-extern void zk_debug(uint8_t *buff, uint16_t len);
+extern void zk_debug(uint8_t *buff, uint32_t len);
 extern int os_get_random(unsigned char *buf, size_t len);
 
 extern void set_net_state(uint8_t net_state);
@@ -174,5 +187,7 @@ extern uint8_t get_net_state(void);
 
 extern void set_sys_state(SYS_STATE sysStata);
 extern SYS_STATE get_sye_state(void);
+
+extern void write_local_cfg_Info(void);
 
 #endif

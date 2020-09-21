@@ -2,6 +2,7 @@
 
 uint8_t get_vat_init_status(void);
 void set_vat_init_status(uint8_t status);
+void vat_cmd_send(char *cmdbuf, uint32_t len);
 
 static osiPipe_t *at_rx_pipe;
 static osiPipe_t *at_tx_pipe;
@@ -191,17 +192,17 @@ static void vat_CGPADDR_rsp_handle(char *rsp_buff, uint32_t len)
         char *ip_p = ++p;
         while(((*p) != '\"')&&((*p) != '\r')&&((*p) != '\n'))
         {
-            //uplus_sys_log("[zk vat] get ipaddr:0x%x", (*p));
+            //OSI_LOGI(0, "[zk vat] get ipaddr:0x%x", (*p));
             cnt++;
             p++;
         }
         memcpy(appSysTem.Module_ipaddr, ip_p, cnt);
         
-        uplus_sys_log("[zk vat] get ipaddr:%s", appSysTem.Module_ipaddr);
+        OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk vat] get ipaddr:%s", appSysTem.Module_ipaddr);
     }
     else
     {
-        uplus_sys_log("[zk vat] get ipaddr:error");
+        OSI_LOGI(0, "[zk vat] get ipaddr:error");
     }
 }
 
@@ -290,7 +291,6 @@ vat_cmd_cb_s * vat_get_atcmd_cb_from_atstring(char *p_atstring, uint16_t *len)
     return NULL;
 }
 
-//extern void at_free_at_params(void);
 static void vat_perform_atcommand(char *p_str, uint32_t len)
 {
     uint16_t vat_cmd_length = 0;
@@ -307,7 +307,7 @@ static void vat_perform_atcommand(char *p_str, uint32_t len)
         return;
     }
 
-    if((p_str[2] >= '0') && (p_str[2] <= '9'))
+    if((p_str[2] >= '0') && (p_str[2] <= '9'))  //为什么是p_str[2]呢？  因为前面有\r\n.
     {
         vat_CIMI_rsp_handle(p_str, len); //CIMI的RSP没有标志前缀，用数字作为判断标准，难搞哟。
         return;
@@ -367,7 +367,7 @@ void vat_recv_task_main(void *pParameter)
     }
 }
 
-static void vat_cmd_send(char *cmdbuf, uint32_t len)
+void vat_cmd_send(char *cmdbuf, uint32_t len)
 {
     if((cmdbuf == NULL) || (len == 0))
     {
@@ -386,7 +386,7 @@ static void module_init(void)
    // vat_cmd_send("AT+CGMR\r\n", strlen("AT+CGMR\r\n"));
     //vat_cmd_send("AT+CEREG=1\r\n", strlen("AT+CEREG=1\r\n"));
     vat_cmd_send("AT+CFUN=1\r\n", strlen("AT+CFUN=1\r\n"));
-    vat_cmd_send("AT+CGSN\r\n", strlen("AT+CGSN\r\n"));
+    //vat_cmd_send("AT+CGSN\r\n", strlen("AT+CGSN\r\n"));
     //vTaskDelay(osiMsToOSTick(1000));
     //vat_cmd_send("AT+CGATT=1\r\n", strlen("AT+CGATT=1\r\n"));
 
@@ -400,71 +400,125 @@ void network_task_main(void *pParameter)
     {
         vTaskDelay(osiMsToOSTick(30)); 
     }
-    //上电先关射频
-    vat_cmd_send("AT+CFUN=0\r\n", strlen("AT+CFUN=0\r\n"));
-    //等获取到底板版本信息以后才开始进行联网
-    while (1)
+        //上电先关射频
+    //vat_cmd_send("AT+CFUN=0\r\n", strlen("AT+CFUN=0\r\n"));
+
+    if(local.fota_flag == 0)
     {
-        vTaskDelay(osiMsToOSTick(1000)); 
-       if((appSysTem.GetDeviceVer_OK_Flag == 1)||(appSysTem.GetDeviceVer_Fail_Flag == 1))
+        //等获取到底板版本信息以后才开始进行联网
+        while (1)
         {
-            module_init();
-            break;
+            vTaskDelay(osiMsToOSTick(1000)); 
+            if((appSysTem.GetDeviceVer_OK_Flag == 1)||(appSysTem.GetDeviceVer_Fail_Flag == 1))
+            {
+                module_init();
+                break;
+            }
         }
     }
+    else
+    {
+        OSI_LOGI(0, "[zk net] network_task_main_0: init START");
+        vTaskDelay(osiMsToOSTick(3000)); 
+        OSI_LOGI(0, "[zk net] network_task_main_0: init START_1");
+        module_init();
+        OSI_LOGI(0, "[zk net] network_task_main_0: init START_2");
+    }
+    
     ////开启定时器，用来控制搜网，x min没搜网成功就整机复位
     xTimerStart(network_Timers, 0);
+    OSI_LOGI(0, "[zk net] network_task_main_0: init finish");
     while (1)
     {
         if(xQueueReceive(network_queue, &msg, portMAX_DELAY) == pdPASS)
         {
-            switch (msg->id)
+            if(local.fota_flag)
             {
-                case NETWORK_ATTACHING:
-                    OSI_LOGI(0, "[zk net] network_task_main_0: net work attaching...");
-                    set_sys_state(SYS_STATE_NETWORK_CONNECT);
-                    break;
-                case NETWORK_ATTACHED:
-                    OSI_LOGI(0, "[zk net] network_task_main_1: net work attached");
-                    set_sys_state(SYS_STATE_NETWORK_CONNECT);
-                    //定义本地PDP上下文
-                    vat_cmd_send("AT+CGDCONT=1,\"IP\",\"\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"\"\r\n"));
-                    vat_cmd_send("AT+CGDCONT?\r\n", strlen("AT+CGDCONT?\r\n"));
-                    break;
-                case NETWORK_DISCONNECT:
-                    OSI_LOGI(0, "[zk net] network_task_main_2: net work disconnect");
-                    set_sys_state(SYS_STATE_NETWORK_CONNECT);
-                    //断网后需要手动停用之前激活的PDP承载通道
-                    vat_cmd_send("AT+CGACT=0,1\r\n", strlen("AT+CGACT=0,1\r\n"));
-                    break;
-                case NETWORK_LINKING:
-                    OSI_LOGI(0, "[zk net] network_task_main_3: net work Linking...");
-                    set_sys_state(SYS_STATE_NETWORK_CONNECT);
-                    //附着上核心网以后，需要手动激活PDP承载通道
-                    vat_cmd_send("AT+CGACT=1,1\r\n", strlen("AT+CGACT=1,1\r\n"));
-                    break;
-                case NETWORK_LINKED:
-                    OSI_LOGI(0, "[zk net] network_task_main_5: net work linked");
-                    ////搜网成功以后，关闭这个定时器，否则会整机复位
-	                if(xTimerIsTimerActive(network_Timers) == pdPASS)
-                    {
-                        xTimerStop(network_Timers, 0);
-                        OSI_LOGI(0, "[zk net] network_task_main_6: stop network time");
-                    }
-                    set_sys_state(SYS_STATE_REG);
-                    //成功激活PDP承载通道后，获取IMSI,ICCID，为后续连接u+云做准备
-                    vat_cmd_send("AT+CCID\r\n", strlen("AT+CCID\r\n"));
-                    vat_cmd_send("AT+CIMI\r\n", strlen("AT+CIMI\r\n"));
-                    vat_cmd_send("AT+CGPADDR\r\n", strlen("AT+CGPADDR\r\n"));
+                switch (msg->id)
+                {
+                    case NETWORK_ATTACHED:
+                        OSI_LOGI(0, "[zk net] network_task_main_1: net work attached");
+                        //set_sys_state(SYS_STATE_NETWORK_CONNECT);
+                        //定义本地PDP上下文
+                        vat_cmd_send("AT+CGDCONT=1,\"IP\",\"\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"\"\r\n"));
+                        vat_cmd_send("AT+CGDCONT?\r\n", strlen("AT+CGDCONT?\r\n"));
+                        break;
+                    case NETWORK_LINKING:
+                        OSI_LOGI(0, "[zk net] network_task_main_3: net work Linking...");
+                        //set_sys_state(SYS_STATE_NETWORK_CONNECT);
+                        //附着上核心网以后，需要手动激活PDP承载通道
+                        vat_cmd_send("AT+CGACT=1,1\r\n", strlen("AT+CGACT=1,1\r\n"));
+                        break;
+                    case NETWORK_LINKED:
+                        OSI_LOGI(0, "[zk net] network_task_main_5: net work linked");
+                        //PDP激活以后,延时一段时间在启动FOTA
+                        vTaskDelay(osiMsToOSTick(5000));
+                        zk_queue_msg_send(fota_event_queue, FOTA_START_MSG, NULL, 0, 0);
+                        break;
+                    default:
+                        OSI_LOGE(0, "[zk net] network_task_main_7: not cmd %d", msg->id);
+                        break;
+                }
+            }
+            else
+            {
+                switch (msg->id)
+                {
+                    case NETWORK_ATTACHING:
+                        OSI_LOGI(0, "[zk net] network_task_main_0: net work attaching...");
+                        set_sys_state(SYS_STATE_NETWORK_CONNECT);
+                        break;
+                    case NETWORK_ATTACHED:
+                        OSI_LOGI(0, "[zk net] network_task_main_1: net work attached");
+                        set_sys_state(SYS_STATE_NETWORK_CONNECT);
+                        //定义本地PDP上下文
+                        vat_cmd_send("AT+CGDCONT=1,\"IP\",\"\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"\"\r\n"));
+                        vat_cmd_send("AT+CGDCONT?\r\n", strlen("AT+CGDCONT?\r\n"));
+                        break;
+                    case NETWORK_DISCONNECT:
+                        OSI_LOGI(0, "[zk net] network_task_main_2: net work disconnect");
+                        set_sys_state(SYS_STATE_NETWORK_CONNECT);
+                        //断网后需要手动停用之前激活的PDP承载通道
+                        vat_cmd_send("AT+CGACT=0,1\r\n", strlen("AT+CGACT=0,1\r\n"));
+                        restart(5);
+                        break;
+                    case NETWORK_LINKING:
+                        OSI_LOGI(0, "[zk net] network_task_main_3: net work Linking...");
+                        set_sys_state(SYS_STATE_NETWORK_CONNECT);
+                        //附着上核心网以后，需要手动激活PDP承载通道
+                        vat_cmd_send("AT+CGACT=1,1\r\n", strlen("AT+CGACT=1,1\r\n"));
+                        break;
+                    case NETWORK_LINKED:
+                        OSI_LOGI(0, "[zk net] network_task_main_5: net work linked");
+                        ////搜网成功以后，关闭这个定时器，否则会整机复位
+                        if(xTimerIsTimerActive(network_Timers) == pdPASS)
+                        {
+                            xTimerStop(network_Timers, 0);
+                            OSI_LOGI(0, "[zk net] network_task_main_6: stop network time");
+                        }
+                        if(get_sye_state() != SYS_STATE_FOTA)
+                        {
+                            set_sys_state(SYS_STATE_REG);
+                            //成功激活PDP承载通道后，获取IMSI,ICCID，为后续连接u+云做准备
+                            vat_cmd_send("AT+CCID\r\n", strlen("AT+CCID\r\n"));
+                            vat_cmd_send("AT+CIMI\r\n", strlen("AT+CIMI\r\n"));
+                            vat_cmd_send("AT+CGPADDR\r\n", strlen("AT+CGPADDR\r\n"));
 
-                    //PDP激活以后延时一段时间在启动优家SDK
-                    vTaskDelay(osiMsToOSTick(5000));
+                            //PDP激活以后,延时一段时间在启动优家SDK
+                            vTaskDelay(osiMsToOSTick(5000));
 
-                    zk_queue_msg_send(uplus_server_queue, UPLUS_SDK_INIT_MSG, NULL, 0, 0);
-                    break;
-                default:
-                    OSI_LOGE(0, "[zk net] network_task_main_7: not cmd %d", msg->id);
-                    break;
+                            //zk_queue_msg_send(uplus_server_queue, UPLUS_SDK_INIT_MSG, NULL, 0, 0);
+                        }
+                        else
+                        {
+                            zk_queue_msg_send(fota_event_queue, FOTA_START_MSG, NULL, 0, 0);
+                        }
+                        
+                        break;
+                    default:
+                        OSI_LOGE(0, "[zk net] network_task_main_7: not cmd %d", msg->id);
+                        break;
+                }
             }
         }
         if(msg)

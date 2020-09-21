@@ -97,7 +97,7 @@ uplus_s32 uplus_net_socket_connect(uplus_s32 sockfd, const struct uplus_sockaddr
 	struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
 	addr_in->sin_family = addr_in->sin_len;
 	addr_in->sin_len = 0;
-	
+
 	struct uplus_in_addr ip_addr = {0};
 	ip_addr.s_addr = addr_in->sin_addr.s_addr;
 	uplus_sys_log("[zk u+] net_socket_connect:len=%d family=%d port=%d ip=%s", addr_in->sin_len, addr_in->sin_family, addr_in->sin_port, uplus_net_inet_ntoa(ip_addr));
@@ -573,9 +573,11 @@ static int gethostbyname(char *hostname, char *ip_addr)
 	{
 		case 0:
 			uplus_sys_log("[zk u+] gethostbyname_1: %s-> parsing time out", hostname);
+			restart(4);
 			return -1;
 		case 1:
 			uplus_sys_log("[zk u+] gethostbyname_2: %s-> parsing fail", hostname);
+			restart(4);
 			return -1;
 		case 2:
 			uplus_sys_log("[zk u+] gethostbyname_3: %s -> %s", hostname, ip_addr);

@@ -182,6 +182,11 @@ static void Get_AirData_Handle(void)
 	if(appSysTem.Inquire_BigData_FailCnt > CHECK_BIGDATA_MAX)
 	{	
 		appSysTem.Inquire_BigData_FailCnt = 0; 
+
+		/*local.fota_flag = 1;
+		local.fota_fail_ret_num = 0;
+		write_local_cfg_Info();*/
+
 		restart(2);	//重启模组
 	}
 	
@@ -442,10 +447,10 @@ static void air_BigData_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Dat
 		//整包数据长度++
 		air_datalen += 1;
 
-		/*if(appSysTem.remote_ctr_air_flag == SERVER_CONTROL_AIR)
+		if(appSysTem.remote_ctr_air_flag == SERVER_CONTROL_AIR)
 			Haier_EventNotifyServer(PKT_BUF_DIR_RSP, EPP_BIG_DATA, air_data, air_datalen);
 		else
-			Haier_EventNotifyServer(PKT_BUF_DIR_RPT, EPP_BIG_DATA, air_data, air_datalen);*/
+			Haier_EventNotifyServer(PKT_BUF_DIR_RPT, EPP_BIG_DATA, air_data, air_datalen);
 
 		free(air_data);
 		
@@ -463,7 +468,7 @@ static void HaierBottomAlarmNotify(uint8_t *StateData, uint16_t Datalen)
 		return;
 
 	//上报告警
-	//Haier_EventNotifyServer(PKT_BUF_DIR_RPT, EPP_DATA, StateData, Datalen);
+	Haier_EventNotifyServer(PKT_BUF_DIR_RPT, EPP_DATA, StateData, Datalen);
 }
 
 static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Databuff, uint16_t Datalen)
@@ -520,7 +525,7 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 					OSI_LOGI(0, "[zk air] Curr_StateData != Old_StateData");
 					//zk_debug(Databuff,Datalen);
 					//底板状态发生变化需要上报到海尔服务器
-					//Haier_EventNotifyServer(PKT_BUF_DIR_RPT, EPP_DATA, RecvBuff, datalen);
+					Haier_EventNotifyServer(PKT_BUF_DIR_RPT, EPP_DATA, RecvBuff, datalen);
 					//更新一次大数据全量 为下次做比较
 					memcpy(&Old_StateData, &Curr_StateData, sizeof(struct StateData1));
 				}
@@ -616,7 +621,7 @@ static void InvalidFrame_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Da
 			//重新计算累加校验和
 			RecvBuff[datalen] = DataAccumulateSumCRC(RecvBuff+2, datalen-2);
 			datalen += 1;
-			//Haier_EventNotifyServer(PKT_BUF_DIR_RSP, EPP_DATA, RecvBuff, datalen);
+			Haier_EventNotifyServer(PKT_BUF_DIR_RSP, EPP_DATA, RecvBuff, datalen);
 		}
 		
 		OSI_LOGI(0, "[zk air] remote control air fail ctrType=%d", appSysTem.remote_ctr_air_flag);
