@@ -31,14 +31,24 @@ void wdg_init(void)
     if(drv_wdi != NULL)
     {
         wdt_wdi = drv_wdi;
-        OSI_LOGI(0, "[zk wdt] wdg_init_0 wdt_wdi init suc");
+        //OSI_LOGI(0, "[zk wdt] wdg_init_0 wdt_wdi init suc");
     }
+    else
+    {
+        OSI_LOGE(0, "[zk wdt] wdg_init_0 wdt_wdi init error");
+    }
+    
     //wdt_rest初始化为输出模式，默认低电平
     config.out_level = false;
     drvGpio_t *drv_rest = drvGpioOpen(WTD_REST_IN_PIN, &config, NULL, NULL);
     if(drv_rest != NULL)
     {
         wdt_rest = drv_rest;
-        OSI_LOGI(0, "[zk wdt] wdg_init_1 wdt_rest init suc");
+        //OSI_LOGI(0, "[zk wdt] wdg_init_1 wdt_rest init suc");
     }
+    else
+    {
+        OSI_LOGE(0, "[zk wdt] wdg_init_1 wdt_rest init error");
+    }
+    
 }

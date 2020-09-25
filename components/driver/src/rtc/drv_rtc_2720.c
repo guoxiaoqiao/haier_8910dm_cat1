@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('R', 'T', 'C', 'A')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "drv_rtc_hal.h"
 #include "hal_config.h"

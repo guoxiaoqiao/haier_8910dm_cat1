@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('R', 'F', 'P', 'R')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "srv_rf_param.h"
 #include "osi_log.h"

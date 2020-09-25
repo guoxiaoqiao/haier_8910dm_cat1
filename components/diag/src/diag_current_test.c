@@ -10,7 +10,7 @@
  * without further testing or modification.
  */
 
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 #define POST_NAME OSI_MAKE_TAG('P', 'O', 'S', 'T')
 
 #include "diag_config.h"

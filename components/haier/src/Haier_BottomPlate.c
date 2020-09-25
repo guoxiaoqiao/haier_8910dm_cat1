@@ -93,12 +93,12 @@ static void air_uart_init(void)
 	else
 	{
 		air_drv = air_drv1;
-		OSI_LOGI(0, "[air] air_drv create suc");
+		//OSI_LOGI(0, "[air] air_drv create suc");
 	}
 
-	if(drvUartOpen(air_drv) == true)
+	if(! drvUartOpen(air_drv))
 	{
-		OSI_LOGI(0, "[air] air_drv open suc");
+		OSI_LOGI(0, "[air] air_drv open fail");
 	}
 }
 
@@ -147,7 +147,7 @@ static uint8_t GetDeviceStateData[13]={0xFF, 0xFF, 0x0A, 00, 00, 00, 00, 00, 00,
 //获取空调底板状态数据
 static void Get_StateData(void)
 {
-	OSI_LOGI(0, "[zk air] get state data get_air_data_cnt=%d rest_num=%d", appSysTem.get_air_data_cnt, local.rest_num);
+	//OSI_LOGI(0, "[zk air] get state data get_air_data_cnt=%d rest_num=%d", appSysTem.get_air_data_cnt, local.rest_num);
 	air_uart_write(GetDeviceStateData, sizeof(GetDeviceStateData));
 }
 
@@ -182,12 +182,14 @@ static void Get_AirData_Handle(void)
 	if(appSysTem.Inquire_BigData_FailCnt > CHECK_BIGDATA_MAX)
 	{	
 		appSysTem.Inquire_BigData_FailCnt = 0; 
-
-		/*local.fota_flag = 1;
-		local.fota_fail_ret_num = 0;
-		write_local_cfg_Info();*/
-
 		restart(2);	//重启模组
+
+		//zk_queue_msg_send(fota_event_queue, FOTA_GET_FWPKG_URL_MSG, NULL, 0, 0);
+	}
+	
+	if ((appSysTem.get_air_data_cnt % 5) == 0)
+	{
+		OSI_LOGI(0, "[zk air] get_air_data_cnt=%d rest_num=%d", appSysTem.get_air_data_cnt, local.rest_num);
 	}
 	
 	if(appSysTem.get_air_data_cnt < GET_BIG_DATA_NUM)
@@ -513,7 +515,7 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 				OSI_LOGI(0, "[zk air] server ctr air ack");
 				//zk_debug(Databuff,Datalen);
 				//服务器下发查询指令，不管是否有变化，都上报
-				//Haier_EventNotifyServer(PKT_BUF_DIR_RSP, EPP_DATA, RecvBuff, datalen);
+				Haier_EventNotifyServer(PKT_BUF_DIR_RSP, EPP_DATA, RecvBuff, datalen);
 				//更新一次大数据全量 为下次做比较
 				memcpy(&Old_StateData, &Curr_StateData, sizeof(struct StateData1));
 			}
@@ -757,15 +759,6 @@ void air_recv_task_main(void *param)
 			{
 				case AIR_UART_RECV_MSG:
 					OSI_LOGI(0, "air recv len=%d", msg->len);
-					/*OSI_LOGXI(OSI_LOGPAR_S, 0, "air recv:%s", (char*)msg->param);
-					char *sendbuf = calloc(1, msg->len+5);
-					if(sendbuf != NULL)
-					{
-						sprintf(sendbuf, "%s:%s", "ACK", (char*)msg->param);
-					}
-					OSI_LOGI(0, "air send:%d", drvUartSend(air_drv, (void *)sendbuf, (size_t)msg->len+5));
-					free(sendbuf);*/
-					//zk_debug(msg->param, msg->len);
 					Haier_UartRecevied(msg->param, msg->len);
 					break;
 				default:

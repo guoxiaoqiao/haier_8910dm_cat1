@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('F', 'D', 'L', '1')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "boot_fdl.h"
 #include "boot_entry.h"

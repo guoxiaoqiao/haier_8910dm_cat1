@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('N', 'D', 'I', 'S')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_VERBOSE
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "usb/usb_ch9.h"
 #include <usb/usb_cdc.h>

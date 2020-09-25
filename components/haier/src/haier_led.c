@@ -16,22 +16,37 @@ static void led_init(void)
     if(drv_led_mode != NULL)
     {
         red_led = drv_led_mode;
-        OSI_LOGI(0, "[zk led] led_init_0 red led init suc");
+        //OSI_LOGI(0, "[zk led] led_init_0 red led init suc");
     }
+	else
+	{
+		OSI_LOGE(0, "[zk led] led_init_0 red led init error");
+	}
+	
     //绿灯初始化为输出模式，默认高电平
     drvGpio_t *drv_led_net_ststus = drvGpioOpen(LED_NET_STATUS_PIN, &config, NULL, NULL);
     if(drv_led_net_ststus != NULL)
     {
         green_led = drv_led_net_ststus;
-        OSI_LOGI(0, "[zk led] led_init_1 green led init suc");
+        //OSI_LOGI(0, "[zk led] led_init_1 green led init suc");
     }
+	else
+	{
+		OSI_LOGE(0, "[zk led] led_init_1 green led init error");
+	}
+	
     //蓝灯初始化为输出模式，默认高电平
     drvGpio_t *drv_led_ststus = drvGpioOpen(LED_STATUS_PIN, &config, NULL, NULL);
     if(drv_led_ststus != NULL)
     {
         blue_led = drv_led_ststus;
-        OSI_LOGI(0, "[zk led] led_init_2 blud led init suc");
+        //OSI_LOGI(0, "[zk led] led_init_2 blud led init suc");
     }
+	else
+	{
+		OSI_LOGE(0, "[zk led] led_init_2 blud led init error");
+	}
+	
 	if(get_sye_state() != SYS_STATE_FOTA)
 	{
 		//上电3个灯常亮2s，然后常灭。（用于工厂工人查看灯是否良好）
@@ -86,7 +101,7 @@ static void led_task_main_handle(void)
 	{
 		case SYS_STATE_POWN:
 			set_sys_state(SYS_STATE_NETWORK_CONNECT);
-			OSI_LOGI(0, "[zk led] led_task_main_0:enter network connect");
+			//OSI_LOGI(0, "[zk led] led_task_main_0:enter network connect");
 			break;
 		case SYS_STATE_NETWORK_CONNECT:
 			LED_MODE_ON;
@@ -110,13 +125,13 @@ static void led_task_main_handle(void)
 			break;
 		case SYS_STATE_FOTA:
 			OSI_LOGI(0, "[zk led] led_task_main_3 sys fota...");
-			LED_STATUS_ON;
+			/*LED_STATUS_ON;
 			LED_MODE_OFF;
 			vTaskDelay(osiMsToOSTick(500)); 
 			LED_STATUS_OFF;
-			vTaskDelay(osiMsToOSTick(500)); 
+			vTaskDelay(osiMsToOSTick(500)); */
 
-			//vTaskDelay(osiMsToOSTick(5*60*1000));
+			vTaskDelay(osiMsToOSTick(5*60*1000));
 			break;
 		default:
 			OSI_LOGE(0, "[zk led] led_task_main_4 sys status error");

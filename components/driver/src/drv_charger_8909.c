@@ -10,7 +10,7 @@
  * without further testing or modification.
  */
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('C', 'H', 'A', 'G')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "drv_charger.h"
 #include "drv_pmic_intr.h"

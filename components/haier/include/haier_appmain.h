@@ -2,7 +2,7 @@
 #define _HAIER_APPMAIN_H_
 
 #define OSI_LOG_TAG OSI_MAKE_LOG_TAG('Z', 'K', 'D', 'B')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_VERBOSE
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "osi_log.h"
 #include "osi_api.h"
@@ -26,7 +26,7 @@
 #include "haier_wtd.h"
 #include "haier_virtat.h"
 
-#define APP_VERSION 		"2.2.3"
+#define APP_VERSION 		"2.2.2"
 
 #define HAIER_FILE_NAME     "/Haier_Local.cfg"
 
@@ -51,6 +51,17 @@ typedef enum
 		
 }REMOTE_CTR_TYPE;
 
+typedef enum
+{
+	FOTA_NULL = 0,
+	
+	FOTA_GET_FWPKG_URL,
+	FOTA_DOWNLOAD,
+
+	FOTA_STATUS_MAX,
+
+}FOTA_STATUS;
+
 //往这个枚举添加值时，请特别注意要往末尾添加，不要在中间添加，否则会影响某个地方的计算
 typedef enum
 {
@@ -67,8 +78,9 @@ typedef enum
 	UPLUS_SDK_SEND_MSG = 8,
 	UPLUS_SDK_RECV_MSG = 9,
 
-	FOTA_START_MSG = 10,
-	FOTA_UPDATE_MSG = 11,
+	FOTA_GET_FWPKG_URL_MSG = 10,
+	FOTA_DOWNLOAD_MSG = 11,
+	FOTA_UPDATE_MSG = 20,
 
 	NETWORK_ATTACHING = 12,
 	NETWORK_ATTACHED = 13,
@@ -147,7 +159,8 @@ typedef struct {
     uint8_t hw_ver[8];
 
 	uint8_t fota_fail_ret_num;
-	//uint8_t fw_pack_md5[33];
+	char fw_pack_md5[33];
+	char fw_pack_url[256];
 	
 }LOCAL_CFG;
 

@@ -843,6 +843,30 @@ ssize_t vfs_file_write(const char *path, const void *data, size_t size)
     return fs->ops.file_write(fs->fs, local_path, data, size);
 }
 
+ssize_t zk_fota_vfs_file_write(const char *path, const void *data, size_t size)
+{
+    char real_path[VFS_PATH_MAX];
+    if (vfs_realpath(path, real_path) == NULL)
+        return -1;
+
+    const char *local_path = NULL;
+    const vfs_entry_t *fs = vfs_get_fs_by_path(real_path, &local_path);
+    //CHECK_VFS(fs, ENOENT, -1);
+    //if (fs->ops.file_write == NULL)
+    {
+        int fd = vfs_open_local_path(fs, local_path, O_RDWR | O_CREAT | O_TRUNC, 0);
+        if (fd < 0)
+            return -1;
+
+        vfs_lseek(fd, 0, 2);
+        ssize_t write_len = vfs_write(fd, data, size);
+        vfs_close(fd);
+        return write_len;
+    }
+
+    //return fs->ops.file_write(fs->fs, local_path, data, size);
+}
+
 ssize_t vfs_file_size(const char *path)
 {
     struct stat st;

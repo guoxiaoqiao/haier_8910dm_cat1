@@ -10,7 +10,7 @@
  * without further testing or modification.
  */
 
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_VERBOSE
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "hal_config.h"
 #include "atr_config.h"

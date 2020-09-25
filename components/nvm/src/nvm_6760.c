@@ -10,7 +10,7 @@
  * without further testing or modification.
  */
 
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('N', 'V', 'M', ' ')
 #define UNUSED_PARAMETER(x) (void)x
 

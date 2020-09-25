@@ -592,6 +592,8 @@ ssize_t vfs_file_read(const char *path, void *buf, size_t count);
  */
 ssize_t vfs_file_write(const char *path, const void *buf, size_t count);
 
+ssize_t zk_fota_vfs_file_write(const char *path, const void *data, size_t size);
+
 /**
  * initial check for safe file
  *

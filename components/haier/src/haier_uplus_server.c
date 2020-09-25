@@ -1,6 +1,5 @@
 #include "haier_uplus_server.h"
 
-
 #define UPLUS_INSTANCE	1 			//instance  数值可以自定义
 
 #define PKT_BUF_MAX	5			//APP允许最大的PKT_BUF数量
@@ -148,8 +147,8 @@ uplus_s32 recv_server_data_callback(void *dev_handle, void *param, pkt_buf_t *pk
 exit:
     if(pkt_buf->data_info.free != NULL)
     {
-        uplus_sys_log("[zk u+] recv_server_data_callback_4");
-	    //pkt_buf->data_info.free(&pkt_buf->data_info);
+        uplus_sys_log("[zk u+] recv_server_data_callback_4:pkt_buf->data_info.free");
+	    //pkt_buf->data_info.free(&(pkt_buf->data_info));
     }
     else
     {
@@ -186,6 +185,7 @@ uplus_s32 recv_server_CtrData_callback(void *dev_handle, void *param, uplus_s32 
 
 static void pkt_data_free(struct data_info * DataInfo)
 {
+	uplus_sys_log("[zk] pkt_data_free_0 len=%d", DataInfo->data.raw_data.data_len);
 	if(DataInfo != NULL)
 	{
 		if(DataInfo->data.raw_data.data != NULL)
@@ -437,6 +437,7 @@ int32_t uplus_usr_init(void)
 	wifi_conn_config->ap_channel = UPLUS_CONFIG_AP_CHANNEL;
 	wifi_conn_config->support_mon_softap = UPLUS_CONFIG_SUPPORT_MON_SOFTAP;
 
+	uplus_sys_log("[zk u+] uplus_usr_init_00:uplus_init START");
 	//framework init
 	ret = uplus_init(init_config);
 	if(ret)

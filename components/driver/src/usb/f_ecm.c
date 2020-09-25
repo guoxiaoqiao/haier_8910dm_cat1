@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('E', 'C', 'M', 'F')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_VERBOSE
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "osi_api.h"
 #include "osi_log.h"

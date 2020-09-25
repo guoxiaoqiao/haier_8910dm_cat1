@@ -52,16 +52,23 @@ void restart(uint8_t typ)
 			break;
 		case 4:
 			OSI_LOGI(0, "[zk] restart_3: u+ sdk DNS parsing error");
-			osiShutdown(OSI_SHUTDOWN_RESET);
+			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
+			//osiShutdown(OSI_SHUTDOWN_RESET);
+			break;
 		case 5:
 			OSI_LOGI(0, "[zk] restart_4: u+ sdk net work disconnect");
-			osiShutdown(OSI_SHUTDOWN_RESET);
+			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
+			//osiShutdown(OSI_SHUTDOWN_RESET);
+			break;
 		case 6:
 			OSI_LOGI(0, "[zk] restart_5: fota reset");
-			osiShutdown(OSI_SHUTDOWN_RESET);
+			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
+			//osiShutdown(OSI_SHUTDOWN_RESET);
+			break;
 		case 7:
 			OSI_LOGI(0, "[zk] restart_6: fota download fail");
-			osiShutdown(OSI_SHUTDOWN_RESET);
+			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
+			//osiShutdown(OSI_SHUTDOWN_RESET);
 			break;
 		default:
 			return;
@@ -272,7 +279,7 @@ static void local_cfg_init(void)
 
 	local.rest_num++;
 
-	if(local.fota_flag == 1)
+	if((local.fota_flag > (uint8_t)FOTA_NULL) && (local.fota_flag < (uint8_t)FOTA_STATUS_MAX))
 	{
 		if(local.fota_fail_ret_num < FOTA_FAIL_RETRIES_NUM)
 		{
@@ -281,11 +288,11 @@ static void local_cfg_init(void)
 		}
 		else
 		{
-			local.fota_flag = 0;
+			local.fota_flag = (uint8_t)FOTA_NULL;
 			local.fota_fail_ret_num = 0;
 		}
 	}
-	OSI_LOGI(0, "[zk local] fota_flag=%d rest_num=%d", local.fota_flag, local.rest_num);
+	OSI_LOGI(0, "[zk local] fota_flag=%d rest_num=%d,fota_num=%d", local.fota_flag, local.rest_num, local.fota_fail_ret_num);
 
 	OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk local] app_version->%s", APP_VERSION);
 
@@ -330,14 +337,11 @@ static void haier_app_IPC_created(void)
 	{
 		OSI_LOGE(0, "[zk] uplus_server_queue Created Fail");
 	}
-	//用于FOTA事件通知
-	if(local.fota_flag)
-	{	
-		fota_event_queue = xQueueCreate(3, sizeof(TASK_MSG *));
-		if(fota_event_queue == NULL)
-		{
-			OSI_LOGE(0, "[zk] fota_event_queue Created Fail");
-		}
+	//用于FOTA事件通知	
+	fota_event_queue = xQueueCreate(3, sizeof(TASK_MSG *));
+	if(fota_event_queue == NULL)
+	{
+		OSI_LOGE(0, "[zk] fota_event_queue Created Fail");
 	}
 }
 
@@ -396,14 +400,12 @@ static void haier_resource_created(void)
 	{
 		app_task_created();
 	}
-	else
+	
+	//fota控制任务：主要负责fota过程的下载阶段，下载完成后会将数据保存到文件系统，然后复位，升级过程在boot中执行
+	extern void ota_task(void *pParameter);
+	if(xTaskCreate((TaskFunction_t)ota_task, "fota_task", 2048, NULL, OSI_PRIORITY_NORMAL+4, &fota_task_handle) != pdPASS)
 	{
-		//fota控制任务：主要负责fota过程的下载阶段，下载完成后会将数据保存到文件系统，然后复位，升级过程在boot中执行
-		extern void ota_task(void *pParameter);
-		if(xTaskCreate((TaskFunction_t)ota_task, "fota_task", 2048, NULL, OSI_PRIORITY_NORMAL+4, &fota_task_handle) != pdPASS)
-		{
-			OSI_LOGE(0, "[zk] fota_task Created Fail");
-		}
+		OSI_LOGE(0, "[zk] fota_task Created Fail");
 	}
 	
 	//搜网任务：负责控制模组网络联网和丢网的事件处理

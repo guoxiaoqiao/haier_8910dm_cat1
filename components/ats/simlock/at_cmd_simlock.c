@@ -11,7 +11,7 @@
 */
 
 #define OSI_LOCAL_LOG_TAG OSI_MAKE_LOG_TAG('S', 'I', 'M', 'L')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "atr_config.h"
 #include "cfw_config.h"

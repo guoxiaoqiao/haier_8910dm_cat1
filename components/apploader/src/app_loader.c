@@ -11,7 +11,7 @@
  */
 
 #define OSI_LOG_TAG OSI_MAKE_LOG_TAG('A', 'P', 'P', 'L')
-#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_DEBUG
+#define OSI_LOCAL_LOG_LEVEL OSI_LOG_LEVEL_INFO
 
 #include "app_loader.h"
 #include "hal_config.h"
