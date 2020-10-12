@@ -80,7 +80,7 @@ static void vat_send_handle(char* cmd, uint32_t cmdlen)
         return;
     }
 
-    //OSI_LOGXI(OSI_LOGPAR_SII, 0, "[zk vat] vat_send_handle_1:VAT1 -->:%s len=%d", cmd, cmdlen);
+    OSI_LOGXI(OSI_LOGPAR_SII, 0, "[zk vat] vat_send_handle_1:VAT1 -->:%s len=%d", cmd, cmdlen);
 
     osiPipeWriteAll(at_rx_pipe, cmd, strlen(cmd), 5000);
     //int writelen = osiPipeWriteAll(at_rx_pipe, cmd, strlen(cmd), 5000);

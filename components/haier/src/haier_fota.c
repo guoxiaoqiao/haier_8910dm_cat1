@@ -151,8 +151,8 @@ static int8_t fota_get_fwpkg_url(void)
 
     zk_http_info->CID = 1;
     zk_http_info->cg_http_api->nCID = 1;
-    strncpy(zk_http_info->url, uhome_url, strlen(uhome_url));
-    strncpy(zk_http_info->CONTENT_TYPE, uhome_content_type, strlen(uhome_content_type));
+    strncpy(zk_http_info->url, uhome_url, sizeof(uhome_url));
+    strncpy(zk_http_info->CONTENT_TYPE, uhome_content_type, sizeof(uhome_content_type));
 
     snprintf(body_content, 255, "{\"productName\":\"AIR_SE-A_CT1\",\"currentVersion\":\"%s\",\"extraInfo\":{}}", APP_VERSION);
     if(! http_setUserdata(zk_http_info, body_content, strlen(body_content)))
@@ -300,7 +300,7 @@ static int8_t fota_download_1(void)
     zk_http_info->CID = 1;
     zk_http_info->cg_http_api->nCID = 1;
     //strncpy(zk_http_info->url, fwpkg_url_1, strlen(fwpkg_url_1));
-    strncpy(zk_http_info->url, local.fw_pack_url, strlen(local.fw_pack_url));
+    strncpy(zk_http_info->url, local.fw_pack_url, strlen(local.fw_pack_url)+1);
 
     if(zk_Http_getn_break(zk_http_info))
     {

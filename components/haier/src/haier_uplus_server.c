@@ -9,21 +9,21 @@ void set_uplus_sdk_state(UPLUS_STATE state);
 uint8_t get_uplus_sdk_state();
 
 //向uplusSDK注册设备返回的句柄
-void *device_handle;
+static void *device_handle;
 
 //uplusSDK内部pkt_bufde的list指针
-pkt_buf_list_t *pkt_buf_list;
+static pkt_buf_list_t *pkt_buf_list;
 
 //uplusSDK注册的设备信息
-device_control_info_t device_ctr_info;
+static device_control_info_t device_ctr_info;
 
 //空调的一些基本信息
 dev_info_t dev;
 
 //服务器下发的session，需要保存，回复时需要带上
-session_desc_t session;
+static session_desc_t session;
 //服务器下发的数据携带的SN，需要保存，回复时需要带上
-uplus_u32 sn;
+static uplus_u32 sn;
 
 static UPLUS_STATE uplus_state;
 
@@ -94,28 +94,20 @@ static void uplus_config_init(void)
 #define EPP_HEAD_LEN	46
 #define EPP_DATA_LEN_MAX (300 +EPP_HEAD_LEN)
 //当服务器侧有数据下来时,此callback会被调用，从pkt_buf中把数据取出透传给底板
-uplus_s32 recv_server_data_callback(void *dev_handle, void *param, pkt_buf_t *pkt_buf)
+uplus_s32 recv_server_data_callback(void *dev_handle, void *param, pkt_buf_t *pkt_buf) 
 {
+	uplus_s32 result = -1;
 	/**** 把数据拿出来透传给底板 ****/
 
 	if((dev_handle == NULL) || (pkt_buf == NULL))
     {
-        //return -1;
         goto exit;
     }
 
-    uplus_sys_log("[zk u+] recv_server_data_callback_0 len=%d =0x%x", pkt_buf->data_info.data.raw_data.data_len, pkt_buf->data_info.data.raw_data.data_len);
-	/*if(pkt_buf->data_info.data.raw_data.data != NULL)
-    {
-        zk_debug(pkt_buf->data_info.data.raw_data.data+EPP_HEAD_LEN, 15);
-    }
-    else
-    {
-        uplus_sys_log("[zk u+] recv_server_data_callback_9 data is null");
-    }*/
+    uplus_sys_log("[zk u+] recv_server_data_callback_0 len=%d", pkt_buf->data_info.data.raw_data.data_len);
     
     //这两个属性需要保存起来，后面应答时需要
-	/*memset(&session, 0, sizeof(session_desc_t));
+	memset(&session, 0, sizeof(session_desc_t));
 	sn = 0;
 	memcpy(&session, &pkt_buf->info_res.session_desc, sizeof(session_desc_t));
 
@@ -129,45 +121,44 @@ uplus_s32 recv_server_data_callback(void *dev_handle, void *param, pkt_buf_t *pk
 		uint8_t *data_buff = pkt_buf->data_info.data.raw_data.data+EPP_HEAD_LEN;
         if(data_buff == NULL)
         {
-            //return -1;
-            uplus_sys_log("[zk u+] recv_server_data_callback_1 pkt_buf->data_info.free");
+            uplus_sys_log("[zk u+] recv_server_data_callback_1 data_buff is NULL");
             goto exit;
         }
-
-		uplus_sys_log("[zk u+] recv_server_data_callback_2 len=%d", len);
+		//uplus_sys_log("[zk u+] recv_server_data_callback_2 len=%d", len);
         zk_queue_msg_send(uplus_server_queue, UPLUS_SDK_RECV_MSG, data_buff, len-EPP_HEAD_LEN, 0);
+
+		result = 0;
 	}
     else
     {
-        uplus_sys_log("[zk u+] recv_server_data_callback_3 datalen error len=%d len=0x%x", len, len);
-        //return -1;
+        uplus_sys_log("[zk u+] recv_server_data_callback_3 datalen error len=%d", len);
         goto exit;
-    }  */
+    } 
 
 exit:
     if(pkt_buf->data_info.free != NULL)
     {
         uplus_sys_log("[zk u+] recv_server_data_callback_4:pkt_buf->data_info.free");
-	    //pkt_buf->data_info.free(&(pkt_buf->data_info));
+	    pkt_buf->data_info.free(&(pkt_buf->data_info));
     }
     else
     {
         uplus_sys_log("[zk u+] recv_server_data_callback_5 pkt_buf->data_info.free is NULL");
-        return -1;
+        result = -1;
     }
     
     if(pkt_buf->free != NULL)
     {
         uplus_sys_log("[zk u+] recv_server_data_callback_6 pkt_buf->free");
-	    //pkt_buf->free(pkt_buf);
+	    pkt_buf->free(pkt_buf);
     }
     else
     {
         uplus_sys_log("[zk u+] recv_server_data_callback_7 pkt_buf->free is NULL");
-        return -1;
+        result = -1;
     }
-    uplus_sys_log("[zk u+] recv_server_data_callback_8 recv_callback end");
-    return 0;
+    uplus_sys_log("[zk u+] recv_server_data_callback_8 recv_callback end reslut=%d", result);
+    return result;
 }
 
 //当服务器侧有控制数据下来时，此callback会被调用，从val指针中把数据取出透传给底板
@@ -548,7 +539,7 @@ int uplus_server_init(void)
 	}
 	uplus_sys_log("[zk u+] uplus_server_init_1 init suc");
 		
-	//set_uplus_sdk_state(UPLUS_STATE_RUN);
+	set_uplus_sdk_state(UPLUS_STATE_RUN);
 
 	//通知SDK，终端正常
 	uplus_dev_status(device_handle, 1);
@@ -598,7 +589,7 @@ void uplus_server_task_main(void *pParameter)
             {
                 case UPLUS_SDK_INIT_MSG:
                     uplus_config_init();
-                    
+
                     uplus_server_init();
                     break;
                 case UPLUS_SDK_SEND_MSG:

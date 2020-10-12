@@ -328,6 +328,8 @@ typedef struct pkt_buf
 		uplus_u8 reserved;
 		session_desc_t session_desc; /*for PKT_BUF_DIR_RSP, copy from REQ*/
 		uplus_u32 sn; /*for PKT_BUF_DIR_RSP, copy from REQ*/
+		uplus_u8 free_flag;
+		uplus_u8 reserved1[3];
 	} info_res;
 
 	data_info_t data_info;
@@ -1693,8 +1695,8 @@ typedef void (* sys_event_cb_func)(uplus_u16 sys_event, void *param);
 extern uplus_s32 uplus_sys_event_cb_set(sys_event_cb_func cb, void * param);
 
 
- typedef void (* app_bindkey_cb_func)(uplus_u8 *buf, uplus_u32 len, void *param);
-	 extern uplus_s32 uplus_bindkey_cb_set(app_bindkey_cb_func cb, void *param);
+typedef void (* app_bindkey_cb_func)(uplus_u8 *buf, uplus_u32 len, void *param);
+extern uplus_s32 uplus_bindkey_cb_set(app_bindkey_cb_func cb, void *param);
 
 /*!
  * \}

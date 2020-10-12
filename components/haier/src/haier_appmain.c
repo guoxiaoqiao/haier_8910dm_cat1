@@ -370,19 +370,19 @@ void app_task_created(void)
 {
 	extern void air_task_main(void *pParameter);
 	//海尔空调控制主任务 ：定时获取空调底板状态,转发服务器下发的控制数据给底板
-	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 1024, NULL, OSI_PRIORITY_NORMAL+2, &air_task_handle) != pdPASS)
+	if(xTaskCreate((TaskFunction_t)air_task_main, "air_task", 2048, NULL, OSI_PRIORITY_NORMAL+2, &air_task_handle) != pdPASS)
 	{
 		OSI_LOGE(0, "[zk] air_task_main Created Fail");
 	}
     //海尔空调底板数据接收任务：负责获取底板发来的数据，并对其进行合法性判断，符合相对应条件后也负责将应用数据上报到云平台
     extern void air_recv_task_main(void *param);
-    if(xTaskCreate((TaskFunction_t)air_recv_task_main, "air_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL+2, &air_recv_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)air_recv_task_main, "air_recv_task", 2048, NULL, OSI_PRIORITY_NORMAL+2, &air_recv_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] air_recv_task Created Fail");
     }
 	//网络侧数据上下行任务：负责直接和uplus SDK交互，数据上下行都由此任务负责
 	extern void uplus_server_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)uplus_server_task_main, "uplus_server_task", 1024, NULL, OSI_PRIORITY_NORMAL+2, &uplus_server_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)uplus_server_task_main, "uplus_server_task", 4096, NULL, OSI_PRIORITY_NORMAL+2, &uplus_server_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] uplus_server_task Created Fail");
     }
@@ -410,7 +410,7 @@ static void haier_resource_created(void)
 	
 	//搜网任务：负责控制模组网络联网和丢网的事件处理
     extern void network_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 1024, NULL, OSI_PRIORITY_NORMAL+3, &network_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)network_task_main, "network_task", 2048, NULL, OSI_PRIORITY_NORMAL+3, &network_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] network_task Created Fail");
     }
@@ -423,14 +423,14 @@ static void haier_resource_created(void)
     }
     //虚拟AT接收任务：接收虚拟AT通道返回的数据，并对其进行解析处理
     extern void vat_recv_task_main(void *pParameter);
-    if(xTaskCreate((TaskFunction_t)vat_recv_task_main, "vat_recv_task", 1024, NULL, OSI_PRIORITY_NORMAL+1, &vat_recv_task_handle) != pdPASS)
+    if(xTaskCreate((TaskFunction_t)vat_recv_task_main, "vat_recv_task", 2048, NULL, OSI_PRIORITY_NORMAL+1, &vat_recv_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] vat_recv_task Created Fail");
     }
 
 	//LED控制任务：根据系统当前状态表现出各种不同的闪灯形式
 	extern void led_task_main(void *pParameter);
-	if(xTaskCreate((TaskFunction_t)led_task_main, "led_task", 256, NULL, OSI_PRIORITY_NORMAL, &led_task_handle) != pdPASS)
+	if(xTaskCreate((TaskFunction_t)led_task_main, "led_task", 512, NULL, OSI_PRIORITY_NORMAL, &led_task_handle) != pdPASS)
     {
         OSI_LOGE(0, "[zk] led_task Created Fail");
     }

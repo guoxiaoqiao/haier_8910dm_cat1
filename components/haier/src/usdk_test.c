@@ -336,7 +336,7 @@ static void socket_api_test(void)
 static char app_version[] = "V1.0.1_0921B";
 uint8_t fata_flag;
 static char content_type[] = "application/json";
-static char body_content[] = "{\"productName\":\"AIR_SE-A_CT1\",\"currentVersion\":\"2.2.3\",\"extraInfo\":{}}";
+static char body_content[] = "{\"productName\":\"AIR_SE-A_CT1\",\"currentVersion\":\"2.2.2\",\"extraInfo\":{}}";
 static char url[] = "http://os.uhome.haier.net/osfota/app/package/v3";
 
 void zk_fota_data_cpy(uint8_t *data, uint32_t len)
@@ -374,7 +374,7 @@ void zk_fota_data_cpy(uint8_t *data, uint32_t len)
     }
 }
 
-extern uint8_t* zk_http_response_print(mUpnpHttpPacket *httpPkt, uint32_t *buff_len);
+//extern uint8_t* zk_http_response_print(mUpnpHttpPacket *httpPkt, uint32_t *buff_len);
 static void http_api_test(void)
 {
     while((get_sye_state() != SYS_STATE_REG))
@@ -394,9 +394,9 @@ static void http_api_test(void)
     OSI_LOGI(0, "[zk http] http ctx init suc");
 
     zk_http_ctx->cg_http_api->nCID = 1;
-    strncpy(zk_http_ctx->url, url, strlen(url));
-    strncpy(zk_http_ctx->content_type, content_type, strlen(content_type));
-    strncpy(zk_http_ctx->body_content, body_content, strlen(body_content));
+    strncpy(zk_http_ctx->url, url, sizeof(url));
+    strncpy(zk_http_ctx->content_type, content_type, sizeof(content_type));
+    strncpy(zk_http_ctx->body_content, body_content, sizeof(body_content));
     zk_http_ctx->contentLen = strlen(body_content);
 
     mUpnpHttpResponse *response = NULL;
@@ -468,9 +468,9 @@ static void http_api_test(void)
         
         //http_response_print((mUpnpHttpPacket *)response);
 
-        mupnp_http_response_clear(response);
+        //mupnp_http_response_clear(response);
 
-        mupnp_http_response_delete(response);
+        //mupnp_http_response_delete(response);
     }
 
     if(RDHttpTerm(zk_http_ctx) == true)
@@ -493,6 +493,7 @@ static void http_api_test(void)
         OSI_LOGI(0, "[zk http] http ctx init suc 1");
 
         zk_http_ctx->cg_http_api->nCID = 1;
+        memset(zk_http_ctx->url, 0, 255);
         strncpy(zk_http_ctx->url, f_url, strlen(f_url));
 
         mUpnpHttpResponse *response1 = NULL;
@@ -505,15 +506,15 @@ static void http_api_test(void)
             //uplus_os_task_delete(2000);
             //http_response_print((mUpnpHttpPacket *)response1);
 
-           uint32_t contentLen = 0;
-           uint8_t *content = zk_http_response_print((mUpnpHttpPacket *)response1, &contentLen);
-           OSI_LOGI(0, "[zk http] http GET ok len=%d", contentLen);
+           //uint32_t contentLen = 0;
+           //uint8_t *content = zk_http_response_print((mUpnpHttpPacket *)response1, &contentLen);
+           //OSI_LOGI(0, "[zk http] http GET ok len=%d", contentLen);
            //zk_debug((uint8_t *)(content+90), (uint32_t)(contentLen - 90));
 
-           uint8_t *content1 = (uint8_t *)response1->content->value;
-           uint32_t contentLen1 = (uint32_t)response1->content->valueSize;
+           uint8_t *content = (uint8_t *)response1->content->value;
+           uint32_t contentLen = (uint32_t)response1->content->valueSize;
 
-           OSI_LOGI(0, "[zk http] http GET ok len_1=%d", contentLen1);
+           OSI_LOGI(0, "[zk http] http GET ok len_1=%d", contentLen);
 
            ZK_MD5_CTX http_context={0};
            MD5Init(&http_context);
@@ -536,7 +537,7 @@ static void http_api_test(void)
            {
                OSI_LOGI(0, "[zk http] http md5 cmp ok");
 
-               zk_fota_data_cpy(content, contentLen);
+               //zk_fota_data_cpy(content, contentLen);
            }
 
            /* char *content = response1->content->value;
