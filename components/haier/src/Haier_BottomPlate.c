@@ -182,7 +182,7 @@ static void Get_AirData_Handle(void)
 	if(appSysTem.Inquire_BigData_FailCnt > CHECK_BIGDATA_MAX)
 	{	
 		appSysTem.Inquire_BigData_FailCnt = 0; 
-		restart(2);	//重启模组
+		//restart(2);	//重启模组
 
 		//zk_queue_msg_send(fota_event_queue, FOTA_GET_FWPKG_URL_MSG, NULL, 0, 0);
 	}
