@@ -18,7 +18,7 @@
 //连续x次获取大数据失败，模组整机复位
 #define CHECK_BIGDATA_MAX			10
 
-#define GET_BIG_DATA_NUM			20//360
+#define GET_BIG_DATA_NUM			360
 
 #define ALARM_MAX					51
 

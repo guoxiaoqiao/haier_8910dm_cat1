@@ -448,13 +448,9 @@ void net_timer_callback(void *argument)
 
 static void module_init(void)
 {
-   // vat_cmd_send("AT+CGMR\r\n", strlen("AT+CGMR\r\n"));
     //vat_cmd_send("AT+CEREG=1\r\n", strlen("AT+CEREG=1\r\n"));
     vat_cmd_send("AT+CFUN=1\r\n", strlen("AT+CFUN=1\r\n"));
     vat_cmd_send("AT+CGSN\r\n", strlen("AT+CGSN\r\n"));
-    //vTaskDelay(osiMsToOSTick(1000));
-    //vat_cmd_send("AT+CGATT=1\r\n", strlen("AT+CGATT=1\r\n"));
-
 }
 
 void network_task_main(void *pParameter)
@@ -465,7 +461,7 @@ void network_task_main(void *pParameter)
     {
         vTaskDelay(osiMsToOSTick(30)); 
     }
-        //上电先关射频
+    //上电先关射频
     vat_cmd_send("AT+CFUN=0\r\n", strlen("AT+CFUN=0\r\n"));
     vat_cmd_send("AT+CSCON=0\r\n", strlen("AT+CSCON=0\r\n"));
 
