@@ -200,10 +200,10 @@ static void Get_AirData_Handle(void)
 	else
 	{
 		//获取大数据之前先获取一下当前网络侧参数
-		/*if(get_net_state() == NETWORK_LINKED)
+		if(get_sye_state() == SYS_STATE_RUN)
 		{
 			get_module_net_info();
-		}*/
+		}
 		Get_BigData();
 		appSysTem.get_air_data_cnt = 0;
 	}
@@ -563,7 +563,7 @@ static void StateReturnData_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t 
 	{
 		case BT_CONTROL_AIR:
 			OSI_LOGI(0, "[zk air] bt ctr air ok ctrTyp=%d", appSysTem.remote_ctr_air_flag);
-			//task_msg_send(bt_task_handle, BT_EVENT_NOTIFY_MSG, RecvBuff, RecvLen);
+			//zk_queue_msg_send(bt_task_handle, BT_EVENT_NOTIFY_MSG, RecvBuff, RecvLen, 0);
 			appSysTem.remote_ctr_air_flag = NULL_CTR;
 			break;
 		case SERVER_CONTROL_AIR:
@@ -594,7 +594,7 @@ static void InvalidFrame_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Da
 		if(BT_CONTROL_AIR == appSysTem.remote_ctr_air_flag)
 		{
 			OSI_LOGI(0, "[zk air] InvalidFrame_handle_0 : bt handle");
-			//task_msg_send(bt_task_handle, BT_EVENT_NOTIFY_MSG, RecvBuff, RecvLen);
+			//zk_queue_msg_send(bt_task_handle, BT_EVENT_NOTIFY_MSG, RecvBuff, RecvLen, 0);
 		}
 		else if(SERVER_CONTROL_AIR == appSysTem.remote_ctr_air_flag)
 		{

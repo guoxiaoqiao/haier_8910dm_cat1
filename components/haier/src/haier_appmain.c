@@ -52,28 +52,20 @@ void restart(uint8_t typ)
 			break;
 		case 4:
 			OSI_LOGI(0, "[zk] restart_3: u+ sdk DNS parsing error");
-			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
-			//osiShutdown(OSI_SHUTDOWN_RESET);
 			break;
 		case 5:
 			OSI_LOGI(0, "[zk] restart_4: u+ sdk net work disconnect");
-			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
-			//osiShutdown(OSI_SHUTDOWN_RESET);
 			break;
 		case 6:
 			OSI_LOGI(0, "[zk] restart_5: fota reset");
-			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
-			//osiShutdown(OSI_SHUTDOWN_RESET);
 			break;
 		case 7:
 			OSI_LOGI(0, "[zk] restart_6: fota download fail");
-			vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
-			//osiShutdown(OSI_SHUTDOWN_RESET);
 			break;
 		default:
 			return;
 	}
-	//vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
+	vat_cmd_send("AT+TRB\r\n", strlen("AT+TRB\r\n"));
 	//osiShutdown(OSI_SHUTDOWN_RESET);
 }
 
@@ -147,15 +139,7 @@ void zk_debug(uint8_t *buff, uint32_t len)
 	j = (uint32_t)(len % 10);
 	uint8_t *p = buff;
 
-	OSI_LOGE(0, "zk_debug len=%d j=%d", len, j);
-
-	/*uint8_t *p = calloc(1, len);
-	if(p == NULL)
-	{
-		OSI_LOGE(0, "zk_debug malloc fail");
-		return;
-	}
-	memcpy(p, buff, len);*/
+	//OSI_LOGE(0, "zk_debug len=%d j=%d", len, j);
 
 	for(i=0; i < (len - j); i+=10)
 	{
@@ -166,7 +150,6 @@ void zk_debug(uint8_t *buff, uint32_t len)
 	{
 		OSI_LOGI(0, "%02X", p[len - j + m]);
 	}
-	//free(p);
 	OSI_LOGI(0, "*****************************end******************************");
 }
 

@@ -176,7 +176,6 @@ uplus_s32 recv_server_CtrData_callback(void *dev_handle, void *param, uplus_s32 
 
 static void pkt_data_free(struct data_info * DataInfo)
 {
-	uplus_sys_log("[zk] pkt_data_free_0 len=%d", DataInfo->data.raw_data.data_len);
 	if(DataInfo != NULL)
 	{
 		if(DataInfo->data.raw_data.data != NULL)
@@ -271,58 +270,6 @@ void send_server_data(uint8_t dir, uint8_t data_sub_type, uint8_t *buff, uint32_
 	pkt_buf->data_info.data_sub_type = data_sub_type;
 
 	memcpy(data, buff, len);
-	
-	/*****    pkt_buf各项元素赋值     *****/
-	
-	//指向下一个pkt_buf，填null
-	/*pkt_buf->next = NULL;
-	
-	//uplusSDK内部的pkt_buf指针
-	pkt_buf->pkt_buf_list = pkt_buf_list;
-	
-	//pkt_buf的释放接口
-	pkt_buf->free = uplus_pkt_buf_free;
-	
-	//数据方向
-	pkt_buf->info_res.dir = dir;
-	
-	//E++协议
-	pkt_buf->info_res.device_protocol = DEVICE_PROTO_FAMILY_EPP;
-	
-	//设备instance
-	pkt_buf->info_res.instance = UPLUS_INSTANCE;
-	
-	//如果当前数据包是应答类型，那么需要带上这些信息（服务器下发的），主动上报不需要
-	if(PKT_BUF_DIR_RSP == dir)
-	{
-		memcpy(&pkt_buf->info_res.session_desc, &session, sizeof(session_desc_t));
-		pkt_buf->info_res.sn = sn;
-	}
-	
-	//数据类型为E++;
-	pkt_buf->data_info.data_type = DATA_TYPE_EPP;
-	
-	//数据子类型
-	pkt_buf->data_info.data_sub_type = data_sub_type;
-
-	uint8 *data_buff = (uint8_t*)malloc(len);
-	if(data_buff == NULL)
-	{
-		uplus_pkt_buf_free(pkt_buf);
-		uplus_sys_log("[zk u+] send_server_data:malloc fail");
-		return ;
-	}
-	//释放数据资源接口
-	pkt_buf->data_info.free = pkt_data_free;
-	
-	//拷贝数据长度
-	pkt_buf->data_info.data.raw_data.data_len= len;
-	
-	//拷贝数据
-	memcpy(data_buff, buff, len);
-	pkt_buf->data_info.data.raw_data.data = data_buff;
-	//memcpy(pkt_buf->data_info.data.raw_data.data, buff, len); */
-
 	
 	/* ****    发送pkt_buf     **** */
 	
@@ -428,7 +375,7 @@ int32_t uplus_usr_init(void)
 	wifi_conn_config->ap_channel = UPLUS_CONFIG_AP_CHANNEL;
 	wifi_conn_config->support_mon_softap = UPLUS_CONFIG_SUPPORT_MON_SOFTAP;
 
-	uplus_sys_log("[zk u+] uplus_usr_init_00:uplus_init START");
+	//uplus_sys_log("[zk u+] uplus_usr_init_00:uplus_init START");
 	//framework init
 	ret = uplus_init(init_config);
 	if(ret)

@@ -18,7 +18,7 @@
 //连续x次获取大数据失败，模组整机复位
 #define CHECK_BIGDATA_MAX			10
 
-#define GET_BIG_DATA_NUM			360
+#define GET_BIG_DATA_NUM			20//360
 
 #define ALARM_MAX					51
 
@@ -113,10 +113,10 @@ struct BigData1{
 
 struct NET_STATS1{
 	
-	int16_t 	rsrp; 	        //12
-	int16_t 	rssi;	        //19
-	int16_t 	snr;	        //14
-	char	    Cell_ID[10];	//10
+	int16_t 	rsrp; 	        
+	int16_t 	rssi;	        
+	int16_t 	snr;	       
+	char	    Cell_ID[10];	
 	uint8_t 	Coverage_level;
 	
 }__attribute__((packed));
@@ -129,5 +129,7 @@ struct ModuleData1{
 	struct NET_STATS1  net_state_info;
 	
 }__attribute__((packed));
+
+extern struct NET_STATS1 net_info;
 
 #endif

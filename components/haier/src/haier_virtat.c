@@ -1,8 +1,10 @@
 #include "haier_virtat.h"
+#include "Haier_BottomPlate.h"
 
 uint8_t get_vat_init_status(void);
 void set_vat_init_status(uint8_t status);
 void vat_cmd_send(char *cmdbuf, uint32_t len);
+void get_module_net_info(void);
 
 static osiPipe_t *at_rx_pipe;
 static osiPipe_t *at_tx_pipe;
@@ -242,6 +244,60 @@ static void vat_CIMI_rsp_handle(char *rsp_buff, uint32_t len)
     OSI_LOGXI(OSI_LOGPAR_IS, 0, "[zk vat] cimi_rsp_(%d):%s", len, appSysTem.Module_IMSI);
 }
 
+static void vat_CSQ_rsp_handle(char *rsp_buff, uint32_t len)
+{
+    net_info.rssi = (int16_t)atoi(rsp_buff);
+
+    OSI_LOGXI(OSI_LOGPAR_SI, 0, "[zk vat] csq_rsp:%s rssi=%d", rsp_buff, net_info.rssi);
+}
+
+static void vat_NETMSG_rsp_handle(char *rsp_buff, uint32_t len)
+{
+    OSI_LOGXI(OSI_LOGPAR_IS, 0, "[zk vat] netmsg_rsp_(%d):%s", len, rsp_buff);
+
+    uint8_t cnt = 0;
+    char* j = NULL;
+    char *p = rsp_buff;
+    if(p != NULL)
+    {
+        while(((*p) != 0x0d)&&((*p) != 0x0a))
+        {
+            if((*p) == ',')
+            {
+                cnt++;
+                if(cnt == 3)
+                {
+                    j = p;
+                    j++;
+                }
+                else if(cnt == 4)
+                {
+                    char* c = p;
+                    memset(net_info.Cell_ID, 0, sizeof(net_info.Cell_ID));
+                    memcpy(net_info.Cell_ID, j, c-j);
+                    OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk vat] get net info ci=%s", net_info.Cell_ID);
+                }
+                else if(cnt == 10)
+                {
+                    j = p;
+                    j++;
+                    net_info.rsrp = atoi(j);
+                    OSI_LOGI(0, "[zk vat] get net info rsrp=%d", net_info.rsrp);
+                }
+                else if(cnt == 12)
+                {
+                    j = p;
+                    j++;
+                    net_info.snr = atoi(j);
+                    OSI_LOGI(0, "[zk vat] get net info snr=%d", net_info.snr);
+                    break;
+                }
+            }
+            p++;		
+        }
+    }
+}
+
 static vat_cmd_cb_s vat_cmd_table[] = {
 
     {"^CINIT:", vat_CINIT_rsp_handle},
@@ -256,6 +312,8 @@ static vat_cmd_cb_s vat_cmd_table[] = {
     {"+CGSN:", vat_CGSN_rsp_handle},
     {"+CCID: ", vat_CCID_rsp_handle},
     //{"+CIMI", vat_CIMI_rsp_handle},
+    {"+CSQ: ", vat_CSQ_rsp_handle},
+    {"+NETMSG LTE:", vat_NETMSG_rsp_handle}
 };
 
 static uint8_t vat_get_cmd_table_size(void)
@@ -377,6 +435,12 @@ void vat_cmd_send(char *cmdbuf, uint32_t len)
     zk_queue_msg_send(vat_send_queue, VAT_SEND_MSG, (void *)cmdbuf, len, 0);
 }
 
+void get_module_net_info(void)
+{
+	vat_cmd_send("AT+CSQ\r\n", strlen("AT+CSQ\r\n"));
+    vat_cmd_send("AT+NETMSG\r\n", strlen("AT+NETMSG\r\n"));
+}
+
 void net_timer_callback(void *argument)
 {	
 	restart(1);
@@ -403,6 +467,7 @@ void network_task_main(void *pParameter)
     }
         //上电先关射频
     vat_cmd_send("AT+CFUN=0\r\n", strlen("AT+CFUN=0\r\n"));
+    vat_cmd_send("AT+CSCON=0\r\n", strlen("AT+CSCON=0\r\n"));
 
     if(local.fota_flag == 0)
     {
@@ -528,7 +593,7 @@ void network_task_main(void *pParameter)
                         vat_cmd_send("AT+CGPADDR\r\n", strlen("AT+CGPADDR\r\n"));
 
                         //PDP激活以后,延时一段时间在启动优家SDK
-                        vTaskDelay(osiMsToOSTick(5000));
+                        vTaskDelay(osiMsToOSTick(3000));
                         zk_queue_msg_send(uplus_server_queue, UPLUS_SDK_INIT_MSG, NULL, 0, 0);
                         break;
                     default:
