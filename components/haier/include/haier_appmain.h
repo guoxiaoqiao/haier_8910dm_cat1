@@ -91,6 +91,8 @@ typedef enum
 
 	VAT_SEND_MSG = 18,
 	VAT_RECV_MSG = 19,
+
+	WTD_FEED_MSG = 20,
 		
 }TASK_MSG_ID;
 
@@ -141,6 +143,8 @@ typedef struct Haier_AppSystem1{
 	uint8_t vat_init_finsh;
 	
 	char uplus_hostname[50];
+
+	uint16_t wtd_cnt;
 
 }Haier_AppSystem;
 

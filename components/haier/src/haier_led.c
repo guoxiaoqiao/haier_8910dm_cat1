@@ -53,7 +53,7 @@ static void led_init(void)
 		set_sys_state(SYS_STATE_POWN);
 		vTaskDelay(osiMsToOSTick(2000)); 
 		LED_MODE_OFF;
-		LED_STATUS_OFF;
+		LED_NET_STATUS_OFF;
 		LED_STATUS_OFF;
 	}
 	OSI_LOGI(0, "[zk led] led_init_3 finish");
@@ -72,7 +72,7 @@ void led_fota_change(uint8_t typ)
 				LED_NET_STATUS_OFF;
 				break;
 			default:
-				OSI_LOGI(0, "[zk led] led_fota_change:typ error %d", typ);
+				OSI_LOGE(0, "[zk led] led_fota_change:typ error %d", typ);
 				break;
 		}
 	}
@@ -85,8 +85,10 @@ void LEDState_Change(uint8_t FlashCnt, uint16_t time)
 	
 	for(i=0; i<FlashCnt; i++)
 	{
+		//LED_NET_STATUS_ON;
 		LED_STATUS_ON;
 		vTaskDelay(osiMsToOSTick(time)); 
+		//LED_NET_STATUS_OFF;
 		LED_STATUS_OFF;
 		if(FlashCnt > 1)
 		{
@@ -104,31 +106,37 @@ static void led_task_main_handle(void)
 			//OSI_LOGI(0, "[zk led] led_task_main_0:enter network connect");
 			break;
 		case SYS_STATE_NETWORK_CONNECT:
-			LED_MODE_ON;
+			//LED_MODE_ON;
+			LED_STATUS_ON;
 			vTaskDelay(osiMsToOSTick(300)); 
-			LED_MODE_OFF;
+			//LED_MODE_OFF;
+			LED_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(300)); 
             //OSI_LOGI(0, "[zk led] led_task_main_1:network connect...");
 			break;
         case SYS_STATE_REG:
-            LED_MODE_ON;
+            //LED_MODE_ON;
+			LED_STATUS_ON;
 			vTaskDelay(osiMsToOSTick(3000)); 
-			LED_MODE_OFF;
+			//LED_MODE_OFF;
+			LED_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(3000)); 
             //OSI_LOGI(0, "[zk led] led_task_main_1:reg server...");
             break;
 		case SYS_STATE_RUN:
-			LED_MODE_ON;
+			//LED_MODE_ON;
+			LED_STATUS_ON;
 			vTaskDelay(osiMsToOSTick(1000)); 
-			LED_MODE_OFF;
+			//LED_MODE_OFF;
+			LED_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(1000)); 
 			break;
 		case SYS_STATE_FOTA:
 			OSI_LOGI(0, "[zk led] led_task_main_3 sys fota...");
-			/*LED_STATUS_ON;
+			/*LED_NET_STATUS_ON;
 			LED_MODE_OFF;
 			vTaskDelay(osiMsToOSTick(500)); 
-			LED_STATUS_OFF;
+			LED_NET_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(500)); */
 
 			vTaskDelay(osiMsToOSTick(5*60*1000));

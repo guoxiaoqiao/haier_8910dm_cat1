@@ -205,7 +205,7 @@ static void vat_CGPADDR_rsp_handle(char *rsp_buff, uint32_t len)
     }
     else
     {
-        OSI_LOGI(0, "[zk vat] get ipaddr:error");
+        OSI_LOGE(0, "[zk vat] get ipaddr:error");
     }
 }
 
@@ -465,6 +465,8 @@ void network_task_main(void *pParameter)
     vat_cmd_send("AT+CFUN=0\r\n", strlen("AT+CFUN=0\r\n"));
     vat_cmd_send("AT+CSCON=0\r\n", strlen("AT+CSCON=0\r\n"));
 
+    //vat_cmd_send("AT+CGDCONT=1,\"IP\",\"ctexcel\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"ctexcel\"\r\n"));
+
     if(local.fota_flag == 0)
     {
         //等获取到底板版本信息以后才开始进行联网
@@ -501,7 +503,7 @@ void network_task_main(void *pParameter)
                         OSI_LOGI(0, "[zk net] network_task_main_1: fota net work attached");
                         //set_sys_state(SYS_STATE_NETWORK_CONNECT);
                         //定义本地PDP上下文
-                        vat_cmd_send("AT+CGDCONT=1,\"IP\",\"\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"\"\r\n"));
+                        vat_cmd_send("AT+CGDCONT=1,\"IP\",\"ctexcel\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"ctexcel\"\r\n"));
                         vat_cmd_send("AT+CGDCONT?\r\n", strlen("AT+CGDCONT?\r\n"));
                         break;
                     case NETWORK_LINKING:
@@ -553,7 +555,7 @@ void network_task_main(void *pParameter)
                         OSI_LOGI(0, "[zk net] network_task_main_1: net work attached");
                         set_sys_state(SYS_STATE_NETWORK_CONNECT);
                         //定义本地PDP上下文
-                        vat_cmd_send("AT+CGDCONT=1,\"IP\",\"\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"\"\r\n"));
+                        vat_cmd_send("AT+CGDCONT=1,\"IP\",\"ctexcel\"\r\n", strlen("AT+CGDCONT=1,\"IP\",\"ctexcel\"\r\n"));
                         vat_cmd_send("AT+CGDCONT?\r\n", strlen("AT+CGDCONT?\r\n"));
                         break;
                     case NETWORK_DISCONNECT:

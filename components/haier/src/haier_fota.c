@@ -114,7 +114,7 @@ static void fota_get_fwpkg_url_1(void)
     Http_info *zk_http_ctx = RD_Http_Init();
     if(zk_http_ctx == NULL)
     {
-        OSI_LOGI(0, "[zk http] http ctx malloc fail");
+        OSI_LOGE(0, "[zk http] http ctx malloc fail");
         return;
     }
 
@@ -128,7 +128,7 @@ static void fota_get_fwpkg_url_1(void)
 
     if ((response = Http_post(zk_http_ctx)) == NULL)
     {
-        OSI_LOGI(0, "[zk http] http post fail");
+        OSI_LOGE(0, "[zk http] http post fail");
     }
     else
     {

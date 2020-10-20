@@ -3,7 +3,7 @@
 
 #include "haier_appmain.h"
 
-#define AIR_UART_NAME	DRV_NAME_UART3
+#define AIR_UART_NAME	DRV_NAME_UART1
 #define AIR_BAUD		(9600)
 
 #define AIR_UART_RECVBUFF_MAX		200

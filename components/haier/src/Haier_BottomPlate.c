@@ -36,7 +36,7 @@ static void air_recv_Callback(void *param, uint32_t evt)
 		recvlen = drvUartReadAvail(air_drv);
 		if(recvlen > 0)
 		{
-			OSI_LOGI(0, "[air] recv new data len1=%d", recvlen);
+			//OSI_LOGI(0, "[air] recv new data len1=%d", recvlen);
 	
 			air_uart_recv.recvLen = 0;
 			memset(air_uart_recv.recvbuff, 0, AIR_UART_RECVBUFF_MAX);
@@ -69,6 +69,13 @@ static void Haier_GetBigDataHandle(void)
 void Haier_SoftTimerCallback(void *argument)
 {
 	Haier_GetBigDataHandle();
+
+	appSysTem.wtd_cnt++;
+	if(appSysTem.wtd_cnt > 19)
+	{
+		appSysTem.wtd_cnt = 0;
+		zk_queue_msg_send(haier_app_queue, WTD_FEED_MSG, NULL, 0, 0);
+	}
 }
 
 static void air_uart_init(void)
@@ -98,7 +105,7 @@ static void air_uart_init(void)
 
 	if(! drvUartOpen(air_drv))
 	{
-		OSI_LOGI(0, "[air] air_drv open fail");
+		OSI_LOGE(0, "[air] air_drv open fail");
 	}
 }
 
@@ -182,7 +189,7 @@ static void Get_AirData_Handle(void)
 	if(appSysTem.Inquire_BigData_FailCnt > CHECK_BIGDATA_MAX)
 	{	
 		appSysTem.Inquire_BigData_FailCnt = 0; 
-		//restart(2);	//重启模组
+		restart(2);	//重启模组
 
 		//zk_queue_msg_send(fota_event_queue, FOTA_GET_FWPKG_URL_MSG, NULL, 0, 0);
 	}
@@ -233,6 +240,10 @@ void air_task_main(void *pParameter)
 				case SERVER_CTR_AIR_MSG:
 					OSI_LOGI(0, "[zk air] air_task_main_0 cmd=%d", msg->id);
 					remote_control_air_handle((REMOTE_CTR_TYPE)(msg->id - 4), msg->param, msg->len);
+					break;
+				case WTD_FEED_MSG:
+					OSI_LOGI(0, "[zk air] wtd feed");
+					wdg_feed();
 					break;
 				default:
 					OSI_LOGE(0, "[zk air] air_task_main_1 not cmd %d", msg->id);
@@ -460,7 +471,7 @@ static void air_BigData_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Dat
 	}
 	else
 	{
-		OSI_LOGI(0, "[zk air] air_BigData_handle_1:uplus sdk not initiated");
+		OSI_LOGI(0, "[zk air] air_BigData_handle_1:uplus sdk not initiated len=%d", RecvLen);
 	}
 }
 
@@ -533,7 +544,7 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 				}
 				else
 				{
-					OSI_LOGI(0, "[zk air] State Not Change");
+					//OSI_LOGI(0, "[zk air] State Not Change");
 				}
 			}
 		}
@@ -547,7 +558,7 @@ static void air_StateData_Handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *D
 	}
 	else
 	{
-		OSI_LOGI(0, "[zk air] air_StateData_Handle:uplus sdk not initiated...");
+		//OSI_LOGI(0, "[zk air] air_StateData_Handle:uplus sdk not initiated... len=%d", RecvLen);
 	}
 }
 
@@ -571,12 +582,12 @@ static void StateReturnData_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t 
 		default:
 			if((Databuff[10] == 0x6d)&&(Databuff[11] == 0x01))//当前数据包为空调状态数据
 			{
-				OSI_LOGI(0, "[zk air] get Air state data ok ctrTyp=%d", appSysTem.remote_ctr_air_flag);
+				//OSI_LOGI(0, "[zk air] get Air state data ok ctrTyp=%d", appSysTem.remote_ctr_air_flag);
 				air_StateData_Handle(RecvBuff, RecvLen, Databuff, Datalen);
 			}
 			else if((Databuff[10] == 0x7d)&&(Databuff[11] == 0x01))//当前数据包为大数据
 			{
-				OSI_LOGI(0, "[zk air] get Air big data ok ctrTyp=%d", appSysTem.remote_ctr_air_flag);
+				//OSI_LOGI(0, "[zk air] get Air big data ok ctrTyp=%d", appSysTem.remote_ctr_air_flag);
 				air_BigData_handle(RecvBuff, RecvLen, Databuff, Datalen);
 			}
 			appSysTem.remote_ctr_air_flag = NULL_CTR;
@@ -633,7 +644,7 @@ static void InvalidFrame_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t *Da
 	}
 	else
 	{
-		OSI_LOGI(0, "[zk air] Haier Uart Recvied Invalid frame");
+		OSI_LOGE(0, "[zk air] Haier Uart Recvied Invalid frame");
 	}
 }
 
@@ -758,7 +769,7 @@ void air_recv_task_main(void *param)
 			switch(msg->id)
 			{
 				case AIR_UART_RECV_MSG:
-					OSI_LOGI(0, "air recv len=%d", msg->len);
+					//OSI_LOGI(0, "air recv len=%d", msg->len);
 					Haier_UartRecevied(msg->param, msg->len);
 					break;
 				default:
