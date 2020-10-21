@@ -673,11 +673,13 @@ static void Haier_BottomProtocolResolution(uint8_t *RecvBuff, uint16_t RecvLen, 
 			memcpy(dev.sw_ver, DevicVersion.SoftVersion, 8);
 			memcpy(dev.hw_ver, DevicVersion.HardVersion, 8);
 
+			#if 0
 			memcpy(local.dev_name, DevicVersion.DeviceName, 8);
 			memcpy(local.proto_ver, DevicVersion.DevicProtocolVersion+3, sizeof(DevicVersion.DevicProtocolVersion)-3);
 			memcpy(local.sw_ver, DevicVersion.SoftVersion, 8);
 			memcpy(local.hw_ver, DevicVersion.HardVersion, 8);
 			write_local_cfg_Info();
+			#endif
 		
 			OSI_LOGI(0, "[zk air] Get Device Version OK");
 			break;

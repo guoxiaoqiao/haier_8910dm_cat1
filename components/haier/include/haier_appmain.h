@@ -157,10 +157,12 @@ typedef struct {
 	//模组复位次数
 	uint32_t rest_num;
 
+#if 0
 	uint8_t dev_name[8];
 	uint8_t proto_ver[5];
 	uint8_t sw_ver[8];
     uint8_t hw_ver[8];
+#endif
 
 	uint8_t fota_fail_ret_num;
 	char fw_pack_md5[33];

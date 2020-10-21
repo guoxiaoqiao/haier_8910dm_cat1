@@ -444,15 +444,16 @@ int uplus_server_init(void)
 		uplus_pkt_buf_list_init(pkt_buf_list, PKT_BUF_MAX);
 	}
 
+	#if 0
     dev.type = DEVICE_TYPE_AC;
     memcpy(dev.dev_name, local.dev_name, 8);
     memcpy(dev.dev_id, TypeId, 32);
 	memcpy(dev.proto_ver, local.proto_ver, 5);
 	memcpy(dev.sw_ver, local.sw_ver, 8);
     memcpy(dev.hw_ver, local.hw_ver, 8);
+	#endif
 	//拷贝空调底板信息
 	memcpy(&device_ctr_info.dev_info, &dev, sizeof(dev_info_t)); 
-	//memcpy(device_ctr_info.dev_info.proto_ver, "2.18", sizeof("2.18"));
 	
 	uplus_sys_log("[zk u+] type=%d", device_ctr_info.dev_info.type);
 	uplus_sys_log("[zk u+] id=0x%x", device_ctr_info.dev_info.dev_id[31]);

@@ -1,4 +1,5 @@
 #include "haier_led.h"
+#include "hal_iomux_pin.h"
 
 drvGpio_t *red_led;
 drvGpio_t *green_led;
@@ -8,6 +9,7 @@ static void led_init(void)
 {
     //drvGpioInit();
 
+	halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_13_PAD_GPIO_13);
     drvGpioConfig_t config = {0};
     config.mode = DRV_GPIO_OUTPUT;
     config.out_level = true;
@@ -52,8 +54,8 @@ static void led_init(void)
 		//上电3个灯常亮2s，然后常灭。（用于工厂工人查看灯是否良好）
 		set_sys_state(SYS_STATE_POWN);
 		vTaskDelay(osiMsToOSTick(2000)); 
-		LED_MODE_OFF;
-		LED_NET_STATUS_OFF;
+		//LED_MODE_OFF;
+		//LED_NET_STATUS_OFF;
 		LED_STATUS_OFF;
 	}
 	OSI_LOGI(0, "[zk led] led_init_3 finish");
