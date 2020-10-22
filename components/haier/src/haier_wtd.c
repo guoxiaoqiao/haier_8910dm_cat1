@@ -1,11 +1,17 @@
 #include "haier_wtd.h"
 
+void wdg_disable(void);
 void wdg_reset(void);
 void wdg_feed(void);
 void wdg_init(void);
 
 drvGpio_t *wdt_wdi;
 drvGpio_t *wdt_rest;
+
+void wdg_disable(void)
+{
+    drvGpioWrite(wdt_rest, true);
+}
 
 void wdg_reset(void)
 {

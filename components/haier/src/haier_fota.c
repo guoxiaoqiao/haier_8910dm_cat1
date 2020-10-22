@@ -154,7 +154,7 @@ static int8_t fota_get_fwpkg_url(void)
     strncpy(zk_http_info->url, uhome_url, sizeof(uhome_url));
     strncpy(zk_http_info->CONTENT_TYPE, uhome_content_type, sizeof(uhome_content_type));
 
-    snprintf(body_content, 255, "{\"productName\":\"AIR_SE-A_CT1\",\"currentVersion\":\"%s\",\"extraInfo\":{}}", APP_VERSION);
+    snprintf(body_content, 255, "{\"productName\":\"AIR_SE-A_CT1\",\"currentVersion\":\"%s\",\"extraInfo\":{}}", HAIER_APP_VERSION);
     if(! http_setUserdata(zk_http_info, body_content, strlen(body_content)))
     {
         OSI_LOGE(0, "[zk ota] get_fwpkg_url_1:http set User data fail");

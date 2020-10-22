@@ -26,7 +26,7 @@
 #include "haier_wtd.h"
 #include "haier_virtat.h"
 
-#define APP_VERSION 		"2.2.2"
+#include "at_command.h"
 
 #define HAIER_FILE_NAME     "/Haier_Local.cfg"
 
@@ -145,6 +145,10 @@ typedef struct Haier_AppSystem1{
 	char uplus_hostname[50];
 
 	uint16_t wtd_cnt;
+
+	uint8_t server_Inquire_bigdata_30S_flag; //30S计数开始标志位，如果超时后没有达到3次查询，那么认为只是普通查询，并不触发FOTA
+	uint8_t server_Inquire_bigdata_30S_cnt; 
+	uint8_t server_Inquire_bigdata_cnt; //服务器30s内连续查询底板大数据状态，认为是触发FOTA事件的标志
 
 }Haier_AppSystem;
 

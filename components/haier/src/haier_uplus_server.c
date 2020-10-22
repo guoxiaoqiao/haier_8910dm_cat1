@@ -455,12 +455,12 @@ int uplus_server_init(void)
 	//拷贝空调底板信息
 	memcpy(&device_ctr_info.dev_info, &dev, sizeof(dev_info_t)); 
 	
-	uplus_sys_log("[zk u+] type=%d", device_ctr_info.dev_info.type);
+	/*uplus_sys_log("[zk u+] type=%d", device_ctr_info.dev_info.type);
 	uplus_sys_log("[zk u+] id=0x%x", device_ctr_info.dev_info.dev_id[31]);
 	uplus_sys_log("[zk u+] sv=%s", device_ctr_info.dev_info.sw_ver);
 	uplus_sys_log("[zk u+] hv=%s", device_ctr_info.dev_info.hw_ver);
 	uplus_sys_log("[zk u+] pv=%s", device_ctr_info.dev_info.proto_ver);
-	uplus_sys_log("[zk u+] name=%s", device_ctr_info.dev_info.dev_name);
+	uplus_sys_log("[zk u+] name=%s", device_ctr_info.dev_info.dev_name);*/
 	
 	//数据类型为E++           
 	device_ctr_info.data_type = DATA_TYPE_EPP | DATA_TYPE_EPP_WITH_PARA;

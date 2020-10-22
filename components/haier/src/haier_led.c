@@ -1,5 +1,5 @@
 #include "haier_led.h"
-#include "hal_iomux_pin.h"
+//#include "hal_iomux_pin.h"
 
 drvGpio_t *red_led;
 drvGpio_t *green_led;
@@ -9,7 +9,7 @@ static void led_init(void)
 {
     //drvGpioInit();
 
-	halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_13_PAD_GPIO_13);
+	//halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_13_PAD_GPIO_13);
     drvGpioConfig_t config = {0};
     config.mode = DRV_GPIO_OUTPUT;
     config.out_level = true;
@@ -54,8 +54,8 @@ static void led_init(void)
 		//上电3个灯常亮2s，然后常灭。（用于工厂工人查看灯是否良好）
 		set_sys_state(SYS_STATE_POWN);
 		vTaskDelay(osiMsToOSTick(2000)); 
-		//LED_MODE_OFF;
-		//LED_NET_STATUS_OFF;
+		LED_MODE_OFF;
+		LED_NET_STATUS_OFF;
 		LED_STATUS_OFF;
 	}
 	OSI_LOGI(0, "[zk led] led_init_3 finish");
@@ -87,11 +87,9 @@ void LEDState_Change(uint8_t FlashCnt, uint16_t time)
 	
 	for(i=0; i<FlashCnt; i++)
 	{
-		//LED_NET_STATUS_ON;
-		LED_STATUS_ON;
+		LED_NET_STATUS_ON;
 		vTaskDelay(osiMsToOSTick(time)); 
-		//LED_NET_STATUS_OFF;
-		LED_STATUS_OFF;
+		LED_NET_STATUS_OFF;
 		if(FlashCnt > 1)
 		{
 			vTaskDelay(osiMsToOSTick(time)); 
@@ -135,13 +133,13 @@ static void led_task_main_handle(void)
 			break;
 		case SYS_STATE_FOTA:
 			OSI_LOGI(0, "[zk led] led_task_main_3 sys fota...");
-			/*LED_NET_STATUS_ON;
+			LED_NET_STATUS_ON;
 			LED_MODE_OFF;
 			vTaskDelay(osiMsToOSTick(500)); 
 			LED_NET_STATUS_OFF;
-			vTaskDelay(osiMsToOSTick(500)); */
+			vTaskDelay(osiMsToOSTick(500)); 
 
-			vTaskDelay(osiMsToOSTick(5*60*1000));
+			//vTaskDelay(osiMsToOSTick(5*60*1000));
 			break;
 		default:
 			OSI_LOGE(0, "[zk led] led_task_main_4 sys status error");
@@ -154,6 +152,11 @@ void led_task_main(void *pParameter)
 {
     wdg_init();
 	led_init();
+
+	if(local.fota_flag != 0)
+	{
+		wdg_disable();
+	}
 	while(1)
 	{
 		led_task_main_handle();

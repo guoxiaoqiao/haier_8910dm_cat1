@@ -277,7 +277,7 @@ static void local_cfg_init(void)
 	}
 	OSI_LOGI(0, "[zk local] fota_flag=%d rest_num=%d,fota_num=%d", local.fota_flag, local.rest_num, local.fota_fail_ret_num);
 
-	OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk local] app_version->%s", APP_VERSION);
+	OSI_LOGXI(OSI_LOGPAR_S, 0, "[zk local] app_version->%s", HAIER_APP_VERSION);
 
 	write_local_cfg_Info();
 }

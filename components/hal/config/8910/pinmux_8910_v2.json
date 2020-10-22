@@ -119,7 +119,7 @@
         "gpio_2": "gpio_2",
         "gpio_20": "camera_ref_clk",
         "gpio_21": "gpio_21",
-        "gpio_22": "gpio_22",
+        "gpio_22": "spi_camera_si_1",
         "gpio_23": "gpio_23",
         "gpio_24": "sdmmc1_cmd",
         "gpio_25": "sdmmc1_data_0",

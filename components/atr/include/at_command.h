@@ -32,6 +32,9 @@ struct osiEvent;
 #define AT_CMD_RETURN(r) OSI_DO_WHILE0(r; return;)
 #define AT_CFW_UTI_INVALID 0xff
 
+//zhangkai 2020/10/22
+#define HAIER_APP_VERSION     "2.2.5"
+
 /**
  * \brief AT command type
  *

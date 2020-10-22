@@ -20,6 +20,16 @@
 #include "nvm.h"
 #include "osi_log.h"
 
+
+//zhangkai 2020/10/22
+#define STRING_EOL          "\r\n"
+#define BOARD_NAME          "8910DM-NT90"
+#define APP_VERSION         "Haier-V"HAIER_APP_VERSION
+
+#define BSP_VER_INFO        "-- Board: "BOARD_NAME" --"STRING_EOL \
+                            "-- SDK Version: "GMR_ID" --"STRING_EOL \
+                            "-- APP Version: "APP_VERSION" --"
+
 OSI_WEAK const char *AT_GMI_ID = GMI_ID;
 OSI_WEAK const char *AT_GMM_ID = GMM_ID;
 OSI_WEAK const char *AT_GMR_ID = GMR_ID;
@@ -53,7 +63,8 @@ void atCmdHandleCGMR(atCommand_t *cmd)
     switch (cmd->type)
     {
     case AT_CMD_EXE:
-        atCmdRespInfoText(cmd->engine, AT_GMR_ID);
+        //atCmdRespInfoText(cmd->engine, AT_GMR_ID);
+        atCmdRespInfoText(cmd->engine, (char *)BSP_VER_INFO);
         atCmdRespOK(cmd->engine);
         break;
 

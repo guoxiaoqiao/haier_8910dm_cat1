@@ -70,6 +70,16 @@ void Haier_SoftTimerCallback(void *argument)
 {
 	Haier_GetBigDataHandle();
 
+	if(appSysTem.server_Inquire_bigdata_30S_flag == 1)
+	{
+		if(((++appSysTem.server_Inquire_bigdata_30S_cnt)*5) > SERVER_INQURE_BIGDATA_TIMEOUT)
+		{
+			appSysTem.server_Inquire_bigdata_30S_flag = 0;
+			appSysTem.server_Inquire_bigdata_30S_cnt = 0;
+			appSysTem.server_Inquire_bigdata_cnt = 0;
+		}
+	}
+						
 	appSysTem.wtd_cnt++;
 	if(appSysTem.wtd_cnt > 19)
 	{
@@ -584,11 +594,45 @@ static void StateReturnData_handle(uint8_t *RecvBuff, uint16_t RecvLen, uint8_t 
 			{
 				//OSI_LOGI(0, "[zk air] get Air state data ok ctrTyp=%d", appSysTem.remote_ctr_air_flag);
 				air_StateData_Handle(RecvBuff, RecvLen, Databuff, Datalen);
+
+				#if 1
+				if(appSysTem.remote_ctr_air_flag == SERVER_CONTROL_AIR)
+				{
+					appSysTem.server_Inquire_bigdata_30S_flag = 1;
+
+					appSysTem.server_Inquire_bigdata_cnt++;
+					OSI_LOGI(0, "[zk air] server get air data cnt=%d", appSysTem.server_Inquire_bigdata_cnt);
+					if(appSysTem.server_Inquire_bigdata_cnt > 5)
+					{
+						appSysTem.server_Inquire_bigdata_30S_flag = 0;
+						appSysTem.server_Inquire_bigdata_30S_cnt = 0;
+						appSysTem.server_Inquire_bigdata_cnt = 0;
+
+						zk_queue_msg_send(fota_event_queue, FOTA_GET_FWPKG_URL_MSG, NULL, 0, 0);
+					}
+				}
+				#endif
 			}
 			else if((Databuff[10] == 0x7d)&&(Databuff[11] == 0x01))//当前数据包为大数据
 			{
 				//OSI_LOGI(0, "[zk air] get Air big data ok ctrTyp=%d", appSysTem.remote_ctr_air_flag);
 				air_BigData_handle(RecvBuff, RecvLen, Databuff, Datalen);
+
+				if(appSysTem.remote_ctr_air_flag == SERVER_CONTROL_AIR)
+				{
+					appSysTem.server_Inquire_bigdata_30S_flag = 1;
+
+					appSysTem.server_Inquire_bigdata_cnt++;
+					OSI_LOGI(0, "[zk air] server get air bigdata cnt=%d", appSysTem.server_Inquire_bigdata_cnt);
+					if(appSysTem.server_Inquire_bigdata_cnt > (SERVER_INQURE_BIGDATA_CNT_MAX -1))
+					{
+						appSysTem.server_Inquire_bigdata_30S_flag = 0;
+						appSysTem.server_Inquire_bigdata_30S_cnt = 0;
+						appSysTem.server_Inquire_bigdata_cnt = 0;
+
+						zk_queue_msg_send(fota_event_queue, FOTA_GET_FWPKG_URL_MSG, NULL, 0, 0);
+					}
+				}
 			}
 			appSysTem.remote_ctr_air_flag = NULL_CTR;
 			break;

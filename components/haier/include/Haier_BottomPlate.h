@@ -22,6 +22,9 @@
 
 #define ALARM_MAX					51
 
+#define SERVER_INQURE_BIGDATA_TIMEOUT 35
+#define SERVER_INQURE_BIGDATA_CNT_MAX 3
+
 typedef struct
 {
 	uint16_t recvLen;
