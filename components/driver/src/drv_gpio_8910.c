@@ -147,7 +147,10 @@ drvGpio_t *drvGpioOpen(uint32_t id, drvGpioConfig_t *cfg, drvGpioIntrCB_t cb, vo
         return NULL;
     }
     if (p->gpios[id] != NULL)
-        return p->gpios[id];
+    {
+        drvGpioClose(p->gpios[id]); //zhangkai 2020/10/23
+        //return p->gpios[id];
+    }
 
     drvGpio_t *d = (drvGpio_t *)calloc(1, sizeof(drvGpio_t));
     d->id = id;

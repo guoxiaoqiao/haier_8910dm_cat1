@@ -1,5 +1,4 @@
 #include "haier_led.h"
-//#include "hal_iomux_pin.h"
 
 drvGpio_t *red_led;
 drvGpio_t *green_led;
@@ -9,7 +8,6 @@ static void led_init(void)
 {
     //drvGpioInit();
 
-	//halIomuxSetFunction(HAL_IOMUX_FUN_GPIO_13_PAD_GPIO_13);
     drvGpioConfig_t config = {0};
     config.mode = DRV_GPIO_OUTPUT;
     config.out_level = true;
@@ -106,29 +104,29 @@ static void led_task_main_handle(void)
 			//OSI_LOGI(0, "[zk led] led_task_main_0:enter network connect");
 			break;
 		case SYS_STATE_NETWORK_CONNECT:
-			//LED_MODE_ON;
-			LED_STATUS_ON;
+			LED_MODE_ON;
+			//LED_STATUS_ON;
 			vTaskDelay(osiMsToOSTick(300)); 
-			//LED_MODE_OFF;
-			LED_STATUS_OFF;
+			LED_MODE_OFF;
+			//LED_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(300)); 
             //OSI_LOGI(0, "[zk led] led_task_main_1:network connect...");
 			break;
         case SYS_STATE_REG:
-            //LED_MODE_ON;
-			LED_STATUS_ON;
+            LED_MODE_ON;
+			//LED_STATUS_ON;
 			vTaskDelay(osiMsToOSTick(3000)); 
-			//LED_MODE_OFF;
-			LED_STATUS_OFF;
+			LED_MODE_OFF;
+			//LED_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(3000)); 
             //OSI_LOGI(0, "[zk led] led_task_main_1:reg server...");
             break;
 		case SYS_STATE_RUN:
-			//LED_MODE_ON;
-			LED_STATUS_ON;
+			LED_MODE_ON;
+			//LED_STATUS_ON;
 			vTaskDelay(osiMsToOSTick(1000)); 
-			//LED_MODE_OFF;
-			LED_STATUS_OFF;
+			LED_MODE_OFF;
+			//LED_STATUS_OFF;
 			vTaskDelay(osiMsToOSTick(1000)); 
 			break;
 		case SYS_STATE_FOTA:
